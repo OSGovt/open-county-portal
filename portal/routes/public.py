@@ -122,7 +122,9 @@ def accessibility(request: Request):
 def open_data(request: Request):
     with get_engine().connect() as conn:
         od = config_store.get(conn, "open_data")
-        return render(request, "public/data.html", conn, page_title="Open data and API", od=od)
+        s = get_settings()
+        return render(request, "public/data.html", conn, page_title="Open data and API", od=od,
+                      api_rate=s.api_rate_per_minute, api_rate_keyed=s.api_rate_per_minute_keyed)
 
 
 @router.get("/files/{file_id}", include_in_schema=False)

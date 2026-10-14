@@ -543,13 +543,36 @@ def tombstone(conn: Connection, object_type: str, object_id: str | int) -> None:
     conn.execute(tombstones.insert().values(object_type=object_type, object_id=str(object_id)))
 
 
+# Schema upgrades. New tables are created automatically by create_all; any
+# other change to an existing table (a new column, an index, a data fix) is a
+# numbered step here. To add one: raise SCHEMA_VERSION by one and add the SQL
+# under the new number. Steps must be safe to run on a database that already
+# has the change (use IF NOT EXISTS), and must never delete residents' data.
+# They run in order, in one transaction each, at every start ("upgrade-db"),
+# after the pre-update backup that "countyctl update" takes.
+MIGRATIONS: dict[int, list[str]] = {
+    # 2: ["ALTER TABLE images ADD COLUMN IF NOT EXISTS example TEXT"],
+}
+
+
 def create_schema(engine: Engine | None = None) -> None:
+    from sqlalchemy import text
     engine = engine or get_engine()
     metadata.create_all(engine)
     with engine.begin() as conn:
         current = conn.execute(schema_info.select().order_by(schema_info.c.id.desc())).first()
-        if current is None:
+        if current is None:  # a new database is created at the newest version
             conn.execute(schema_info.insert().values(version=SCHEMA_VERSION))
+            return
+        version = current.version
+    if version > SCHEMA_VERSION:
+        raise RuntimeError(f"The database is from a newer version of the portal (schema {version}; this version "
+                           f"knows {SCHEMA_VERSION}). Use 'countyctl rollback' or install the newer version.")
+    for step in range(version + 1, SCHEMA_VERSION + 1):
+        with engine.begin() as conn:
+            for statement in MIGRATIONS.get(step, []):
+                conn.execute(text(statement))
+            conn.execute(schema_info.insert().values(version=step))
 
 
 def schema_version(conn: Connection) -> int | None:

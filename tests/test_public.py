@@ -141,3 +141,19 @@ def test_redacted_page_text_never_shows_original(client):
             conn.execute(redaction_marks.delete().where(redaction_marks.c.id == mark))
             conn.execute(images.update().where(images.c.id == img["id"])
                          .values(ocr_text=old_text, redacted=False, public_text=None))
+
+
+def test_change_feed_reports_unpublished_as_delete(client):
+    from sqlalchemy import select
+
+    from portal.db import services, tx, utcnow
+    with tx() as conn:
+        slug = conn.execute(select(services.c.slug).where(services.c.published.is_(True))).first()[0]
+        conn.execute(services.update().where(services.c.slug == slug).values(published=False, updated_at=utcnow()))
+    try:
+        data = client.get("/api/v1/changes", params={"since": "2000-01-01T00:00:00Z"}).json()["data"]
+        entry = [c for c in data if c["type"] == "service" and c["id"] == slug][-1]
+        assert entry["change"] == "delete"
+    finally:
+        with tx() as conn:
+            conn.execute(services.update().where(services.c.slug == slug).values(published=True))

@@ -200,3 +200,36 @@ def test_title2_deadline():
     assert str(title2_deadline({"jurisdiction_type": "county", "population": 9000})[0]) == "2028-04-26"
     assert str(title2_deadline({"jurisdiction_type": "special_district", "population": 900000})[0]) == "2028-04-26"
     assert title2_deadline({"jurisdiction_type": "county"})[0] is None
+
+
+def test_every_state_pack_is_valid():
+    """Every pack shipped in portal/statepacks validates and gives county and district profiles."""
+    import yaml
+
+    from portal import statepacks
+    for path in sorted(statepacks.PACK_DIR.glob("*/pack.yaml")):
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        assert statepacks.validate(data) == [], path
+        for kind in ("county", "special_district", "school_district", "municipality"):
+            prof = statepacks.profile(data, kind)
+            assert set(prof) >= {"offices", "services", "fees", "forms", "postings"}
+
+
+def test_schema_upgrade_steps_run_in_order(monkeypatch):
+    from portal import db
+    from sqlalchemy import text
+    monkeypatch.setattr(db, "SCHEMA_VERSION", db.SCHEMA_VERSION + 1)
+    monkeypatch.setitem(db.MIGRATIONS, db.SCHEMA_VERSION,
+                        ["CREATE TABLE IF NOT EXISTS upgrade_probe (id int)", "INSERT INTO upgrade_probe VALUES (1)"])
+    with tx() as conn:
+        before = db.schema_version(conn)
+    try:
+        db.create_schema()
+        db.create_schema()  # running again does nothing more
+        with tx() as conn:
+            assert db.schema_version(conn) == before + 1
+            assert conn.execute(text("SELECT count(*) FROM upgrade_probe")).scalar_one() == 1
+    finally:
+        with tx() as conn:
+            conn.execute(text("DROP TABLE IF EXISTS upgrade_probe"))
+            conn.execute(db.schema_info.delete().where(db.schema_info.c.version > before))

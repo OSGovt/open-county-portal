@@ -25,7 +25,10 @@
     </ul>
   </section>
   <section class="card"><h2>Limits and terms</h2>
-    <p>The live API allows {{ 120 }} requests a minute per address without a key, and more with a free key. {{ od.data_terms }}</p>
+    <p>The live API allows {{ api_rate }} requests a minute per address without a key, and {{ api_rate_keyed }} with a free key.
+    {% if od.contact_email or site.email %}To get a key, email <a href="mailto:{{ od.contact_email or site.email }}">{{ od.contact_email or site.email }}</a> and say what you're building. Send it in the <code>X-API-Key</code> header.{% endif %}
+    For everything at once, the bulk files have no limit.</p>
+    {% if od.data_terms %}<p>{{ od.data_terms }}</p>{% endif %}
     <p>Information that the law keeps confidential, including redacted details and residents' payment and personal information, is never published.</p>
   </section>
 </article>

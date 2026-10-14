@@ -165,9 +165,9 @@ Mark "a restore was practiced" on the go-live checklist when done.
 
 1. Build a new server and install the portal ([Install](install.md)) with the
    same web address and certificate mode.
-2. Replace the new settings file with your saved copy (this keeps the same
-   passwords and secret key, so staff sign-in codes and certified-copy
-   verification keep working):
+2. Replace the new settings file with your saved copy (this brings back your
+   email, off-site backup and other settings; everything else, including
+   staff accounts and payment settings, comes back with the database):
 
 ```
 sudo nano /opt/county-portal/.env

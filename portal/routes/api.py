@@ -175,11 +175,19 @@ def changes(since: dt.datetime, limit: int = Query(1000, ge=1, le=5000)):
                               .order_by(instruments.c.updated_at).limit(limit)):
             out.append({"type": "instrument", "id": r.instrument_number, "change": "upsert", "at": r.updated_at,
                         "url": f"{base}/api/v1/instruments/{r.instrument_number}"})
+        # Items that are no longer public (unpublished, back to draft, inactive) are reported as deletes,
+        # the same way their list endpoints stop showing them.
+        visible = {"meeting": meetings.c.status.in_(["posted", "held", "cancelled"]),
+                   "posting": postings.c.published.is_(True), "service": services.c.published.is_(True),
+                   "office": offices.c.active.is_(True)}
         for table, kind, key in ((meetings, "meeting", "id"), (postings, "posting", "id"), (services, "service", "slug"),
                                  (offices, "office", "slug"), (fees_table, "fee", "code")):
-            for r in conn.execute(select(table.c[key], table.c.updated_at).where(table.c.updated_at >= since)
+            shown = visible.get(kind)
+            cols = [table.c[key], table.c.updated_at] + ([shown.label("shown")] if shown is not None else [])
+            for r in conn.execute(select(*cols).where(table.c.updated_at >= since)
                                   .order_by(table.c.updated_at).limit(limit)):
-                out.append({"type": kind, "id": str(r[0]), "change": "upsert", "at": r.updated_at})
+                public = True if shown is None else bool(r.shown)
+                out.append({"type": kind, "id": str(r[0]), "change": "upsert" if public else "delete", "at": r.updated_at})
         for r in conn.execute(select(tombstones).where(tombstones.c.deleted_at >= since)
                               .order_by(tombstones.c.deleted_at).limit(limit)).mappings():
             out.append({"type": r["object_type"], "id": r["object_id"], "change": "delete", "at": r["deleted_at"]})
