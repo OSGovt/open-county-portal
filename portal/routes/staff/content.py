@@ -314,6 +314,12 @@ async def save_row(request: Request, entity: str):
             for k in ("old_path", "new_path"):
                 if values.get(k) and not str(values[k]).startswith("/"):
                     errors[k] = "Start with a slash, like /old-page.html"
+        kcol = ent["key"]
+        if not key and kcol != "id" and values.get(kcol) and kcol not in errors:
+            t0 = ent["table"]
+            if conn.execute(select(t0.c[kcol]).where(t0.c[kcol] == values[kcol])).first():
+                label = next((f["label"] for f in fields if f["name"] == kcol), kcol).lower()
+                errors[kcol] = f"There's already a {ent['one']} with this {label}. Edit that one instead."
         if errors:
             row = dict(values)
             return staff_render(request, "staff/content_edit.html", conn, user, status_code=400,

@@ -1,0 +1,12 @@
+# Provided-certificate mode: use a certificate your organization already has.
+# Put the certificate and key at /var/lib/county-portal/caddy/certs/portal.crt
+# and portal.key (inside the container: /data/certs/).
+{$PORTAL_HOST} {
+	tls /data/certs/portal.crt /data/certs/portal.key
+	encode zstd gzip
+	request_body {
+		max_size 60MB
+	}
+	header -Server
+	reverse_proxy app:8000
+}

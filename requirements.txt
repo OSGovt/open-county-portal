@@ -1,0 +1,21 @@
+# Exact versions tested together. Update them together, run the tests, then release.
+argon2-cffi==25.1.0
+beautifulsoup4==4.15.0
+fastapi==0.143.0
+httpx==0.28.1
+itsdangerous==2.2.0
+Jinja2==3.1.6
+markdown-it-py==4.2.0
+markdownify==1.2.3
+MarkupSafe==3.0.3
+openpyxl==3.1.5
+pillow==12.3.0
+psycopg[binary]==3.3.6
+pydantic==2.13.5
+PyOTP==2.10.0
+python-multipart==0.0.32
+PyYAML==6.0.3
+qrcode==8.2
+SQLAlchemy==2.1.4
+starlette==1.6.0
+uvicorn[standard]==0.53.0

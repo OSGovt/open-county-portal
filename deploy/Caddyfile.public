@@ -1,0 +1,15 @@
+# Public mode: Caddy obtains and renews a free HTTPS certificate from
+# Let's Encrypt automatically. Requires the host name's public DNS to point at
+# this server and ports 80 and 443 to be reachable from the internet.
+{
+	email {$PORTAL_ADMIN_EMAIL}
+}
+
+{$PORTAL_HOST} {
+	encode zstd gzip
+	request_body {
+		max_size 60MB
+	}
+	header -Server
+	reverse_proxy app:8000
+}

@@ -41,6 +41,8 @@ def cmd_setup(a) -> int:
             pack = statepacks.load(a.state)
             site["state"] = a.state
             site["state_name"] = pack["name"]
+        if getattr(a, "state_name", None):
+            site["state_name"] = a.state_name
         config_store.put(conn, "site", site, actor="setup", note="Initial setup")
         counts = statepacks.apply(conn, site["state"], site["jurisdiction_type"])
         say(f"State pack '{site['state']}' applied: {counts['offices']} offices, {counts['services']} services, "
@@ -301,6 +303,68 @@ def cmd_check(a) -> int:
     return 0 if ok else 1
 
 
+def cmd_upgrade_db(a) -> int:
+    """Bring the database up to this version's schema. Runs at every start; safe to repeat."""
+    import time
+    for attempt in range(30):
+        try:
+            create_schema()
+            break
+        except Exception as exc:
+            if attempt == 29:
+                say(f"The database isn't reachable: {exc}")
+                return 1
+            time.sleep(2)
+    _extensions()
+    get_settings().ensure_dirs()
+    say("Database is up to date.")
+    return 0
+
+
+def cmd_backup(a) -> int:
+    from . import ops
+    ops.backup(label=a.label or "", log=say)
+    return 0
+
+
+def cmd_list_backups(a) -> int:
+    from . import ops
+    rows = ops.list_backups()
+    if not rows:
+        say("No backups yet.")
+    for b in rows:
+        m = json.loads((b / "manifest.json").read_text())
+        say(f"{b.name:40} version {m.get('version', '?'):8} database {m.get('db_dump_bytes', 0) / 1e6:8.1f} MB  "
+            f"{m.get('files_copied', 0):,} new files")
+    return 0
+
+
+def cmd_verify_backup(a) -> int:
+    from . import ops
+    path = get_settings().backups_dir / a.name
+    problems = ops.verify(path)
+    if problems:
+        for p in problems:
+            say(f"PROBLEM: {p}")
+        return 1
+    say(f"Backup {a.name} is complete and readable.")
+    return 0
+
+
+def cmd_restore(a) -> int:
+    from . import ops
+    path = get_settings().backups_dir / a.name
+    if not path.exists():
+        say(f"No backup named {a.name}. List them with: countyctl backups")
+        return 1
+    if not a.yes:
+        say("Restoring replaces the database and files. Use the host command 'countyctl restore', which stops the "
+            "site and takes a safety backup first.")
+        return 1
+    ops.restore(path, log=say)
+    return 0
+
+
 def cmd_pack(a) -> int:
     if a.action == "list":
         for code in statepacks.available():
@@ -325,7 +389,8 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("setup", help="Create the database and apply the state pack (safe to re-run).")
     s.add_argument("--name", help="Jurisdiction name, e.g. 'Example County'")
     s.add_argument("--type", choices=["county", "special_district", "school_district", "municipality"])
-    s.add_argument("--state", help="Two-letter state pack code, e.g. tx")
+    s.add_argument("--state", help="Two-letter state pack code, e.g. tx (use _template if your state has no pack yet)")
+    s.add_argument("--state-name", help="State name to show on the site when using _template, e.g. Ohio")
     s.add_argument("--admin-email")
     s.add_argument("--admin-name")
     s.set_defaults(fn=cmd_setup)
@@ -349,6 +414,19 @@ def main(argv: list[str] | None = None) -> int:
     o.set_defaults(fn=cmd_ocr)
     sub.add_parser("purge-uploads", help="Delete sensitive uploads past the retention period.").set_defaults(fn=cmd_purge_uploads)
     sub.add_parser("check", help="Self-test.").set_defaults(fn=cmd_check)
+    sub.add_parser("upgrade-db", help="Bring the database schema up to date (runs at every start).").set_defaults(fn=cmd_upgrade_db)
+    bk = sub.add_parser("backup", help="Back up the database and files now.")
+    bk.add_argument("--label", default="")
+    bk.set_defaults(fn=cmd_backup)
+    sub.add_parser("list-backups", help="List backups.").set_defaults(fn=cmd_list_backups)
+    vb = sub.add_parser("verify-backup", help="Check that a backup is complete and readable.")
+    vb.add_argument("name")
+    vb.set_defaults(fn=cmd_verify_backup)
+    rs = sub.add_parser("restore", help="Restore a backup (use the host command 'countyctl restore').")
+    rs.add_argument("name")
+    rs.add_argument("--yes", action="store_true")
+    rs.set_defaults(fn=cmd_restore)
+
     pk = sub.add_parser("pack", help="List or validate state packs.")
     pk.add_argument("action", choices=["list", "validate"])
     pk.add_argument("path", nargs="?")

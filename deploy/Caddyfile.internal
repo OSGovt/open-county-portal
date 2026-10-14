@@ -1,0 +1,12 @@
+# Internal mode: for a test server or a site only reachable inside the county
+# network. Caddy issues its own certificate, so browsers will warn until the
+# certificate authority is trusted (see docs/admin/https.md).
+{$PORTAL_HOST} {
+	tls internal
+	encode zstd gzip
+	request_body {
+		max_size 60MB
+	}
+	header -Server
+	reverse_proxy app:8000
+}

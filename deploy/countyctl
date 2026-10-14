@@ -1,0 +1,371 @@
+#!/usr/bin/env bash
+# countyctl: run and maintain an Open County Portal server.
+#
+# Every command is safe to run more than once. Commands that change things
+# take a backup first, and updates undo themselves if the new version doesn't
+# come up healthy. Run 'sudo countyctl help' for the list.
+set -Eeuo pipefail
+
+INSTALL_DIR="${COUNTY_PORTAL_DIR:-/opt/county-portal}"
+DATA_ROOT="/var/lib/county-portal"
+STATUS_DIR="$DATA_ROOT/data/status"
+LOG_FILE="/var/log/county-portal.log"
+
+bold() { printf '\033[1m%s\033[0m\n' "$*"; }
+ok()   { printf '  [ OK ]  %s\n' "$*"; }
+warn() { printf '  [WARN]  %s\n' "$*"; }
+bad()  { printf '  [FAIL]  %s\n' "$*"; }
+log()  { printf '%s %s\n' "$(date -Is)" "$*" >> "$LOG_FILE" 2>/dev/null || true; }
+die()  { printf '\nError: %s\n' "$*" >&2; log "ERROR $*"; exit 1; }
+trap 'rc=$?; printf "\nError: the command on line %s of countyctl failed (exit %s). The output above says why.\n" "$LINENO" "$rc" >&2; log "ERROR line $LINENO rc=$rc"; exit "$rc"' ERR
+
+need_root() {
+  [ "$(id -u)" -eq 0 ] || die "Run this with sudo:  sudo countyctl $*"
+}
+
+compose() {
+  (cd "$INSTALL_DIR" && docker compose "$@")
+}
+
+env_value() {
+  # Read one KEY=value line from .env without executing the file.
+  sed -n "s/^$1=//p" "$INSTALL_DIR/.env" 2>/dev/null | tail -1 | sed -e 's/^"//' -e 's/"$//'
+}
+
+app() {
+  # Run an application command inside the running app container.
+  compose exec -T app python -m portal.cli "$@"
+}
+
+healthy() {
+  # Wait up to $1 seconds for the app to answer /healthz.
+  local wait="${1:-90}" i
+  for ((i = 0; i < wait; i += 3)); do
+    if compose exec -T app python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3).status == 200 else 1)" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 3
+  done
+  return 1
+}
+
+current_version() { cat "$INSTALL_DIR/VERSION" 2>/dev/null || echo unknown; }
+
+write_status() {
+  mkdir -p "$STATUS_DIR"
+  printf '%s\n' "$2" > "$STATUS_DIR/$1.tmp" && mv "$STATUS_DIR/$1.tmp" "$STATUS_DIR/$1"
+  chown 1000:1000 "$STATUS_DIR/$1" 2>/dev/null || true
+}
+
+cmd_help() {
+  cat <<'EOF'
+countyctl: manage the Open County Portal server
+
+Everyday
+  sudo countyctl status            Is everything running? Versions, disk, backups, certificate.
+  sudo countyctl doctor            Check the whole installation and explain any problem in plain English.
+  sudo countyctl logs [service]    Show recent log lines (service: app, db, web). Ctrl+C to stop.
+  sudo countyctl restart           Restart the portal (about 20 seconds of downtime).
+
+Backups
+  sudo countyctl backup            Back up the database and files now.
+  sudo countyctl backups           List backups.
+  sudo countyctl restore NAME      Put the site back to a backup. Takes a safety backup first.
+
+Updates
+  sudo countyctl update [VERSION]  Install a new release. Backs up first; undoes itself if the new version fails.
+  sudo countyctl update --from FILE.tar.gz   Install a release you downloaded.
+  sudo countyctl rollback          Go back to the version and data from before the last update.
+
+Application commands (staff accounts, imports, sample data and more)
+  sudo countyctl app --help
+  sudo countyctl app user add --email pat@county.gov --name "Pat Lee" --role records
+  sudo countyctl app migrate records inventory /import/records-export
+
+The full guide is in /opt/county-portal/docs/admin/README.md and in the staff console under Help.
+EOF
+}
+
+cmd_status() {
+  need_root status
+  bold "Open County Portal $(current_version) at https://$(env_value PORTAL_HOST)"
+  compose ps --format 'table {{.Service}}\t{{.State}}\t{{.Status}}' || true
+  echo
+  df -h "$DATA_ROOT" | awk 'NR==2 {print "Disk: " $4 " free of " $2 " (" $5 " used)"}'
+  if [ -f "$STATUS_DIR/last_backup.json" ]; then
+    echo "Last backup: $(sed -n 's/.*"finished_at": "\([^"]*\)".*/\1/p' "$STATUS_DIR/last_backup.json")"
+  else
+    echo "Last backup: none yet. Run: sudo countyctl backup"
+  fi
+  if [ -f "$STATUS_DIR/last_offsite.json" ]; then
+    echo "Last off-site copy: $(sed -n 's/.*"at": "\([^"]*\)".*/\1/p' "$STATUS_DIR/last_offsite.json")"
+  else
+    echo "Off-site copies: not set up (see docs/admin/backups.md)"
+  fi
+}
+
+cmd_logs() {
+  need_root logs
+  compose logs --tail=200 -f "${1:-}"
+}
+
+cmd_restart() {
+  need_root restart
+  log "restart"
+  compose up -d
+  compose restart app web
+  if healthy 120; then echo "The portal is running."; else die "The portal didn't come back. Run: sudo countyctl doctor"; fi
+}
+
+cmd_start() { need_root start; compose up -d; healthy 120 && echo "The portal is running."; }
+cmd_stop()  { need_root stop; compose stop; echo "Stopped. Start again with: sudo countyctl start"; }
+
+offsite_copy() {
+  # Copy the newest backup off this server with the admin's own command from .env.
+  local cmd; cmd="$(env_value PORTAL_BACKUP_COPY_CMD)"
+  [ -n "$cmd" ] || return 0
+  local newest="" b
+  for b in "$DATA_ROOT"/data/backups/2*; do
+    if [ -f "$b/manifest.json" ]; then newest="$b"; fi   # globs sort by name; names start with the date
+  done
+  [ -n "$newest" ] || return 0
+  echo "Copying $(basename "$newest") off the server..."
+  local rc=0
+  bash -c "${cmd//\{path\}/$newest}" || rc=$?
+  write_status last_offsite.json "{\"at\": \"$(date -Is)\", \"ok\": $([ $rc -eq 0 ] && echo true || echo false), \"path\": \"$newest\"}"
+  if [ $rc -eq 0 ]; then echo "Off-site copy finished."; log "offsite ok $newest"
+  else warn "Off-site copy FAILED (exit $rc). The backup is still on this server."; log "offsite FAILED $newest rc=$rc"; return 1; fi
+}
+
+cmd_backup() {
+  need_root backup
+  log "backup start"
+  app backup "$@"
+  log "backup done"
+  offsite_copy
+}
+
+cmd_backups() { need_root backups; app list-backups; }
+
+cmd_restore() {
+  need_root restore
+  local name="${1:-}"
+  [ -n "$name" ] || { app list-backups; die "Name the backup to restore, for example: sudo countyctl restore 20261014-023000"; }
+  app verify-backup "$name" || die "That backup can't be used. Choose another from: sudo countyctl backups"
+  echo
+  echo "This puts the website, records and settings back to how they were in backup $name."
+  echo "Anything entered since then (payments, requests, edits) will be gone from the portal."
+  read -r -p "Type the backup name to confirm: " typed
+  [ "$typed" = "$name" ] || die "Not confirmed; nothing changed."
+  log "restore $name: taking safety backup"
+  app backup --label before-restore
+  compose stop web app
+  log "restore $name: restoring"
+  if compose run --rm --no-deps app python -m portal.cli restore "$name" --yes; then
+    compose up -d
+    healthy 120 && echo "Restored from $name. The site is back up." || die "Restored, but the site didn't come up. Run: sudo countyctl doctor"
+  else
+    compose up -d
+    die "The restore failed and nothing was replaced. A safety backup labeled 'before-restore' exists."
+  fi
+  log "restore $name: done"
+}
+
+image_tag() { docker image inspect "county-portal:$1" >/dev/null 2>&1; }
+
+cmd_update() {
+  need_root update
+  local from="" target=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --from) from="$2"; shift 2 ;;
+      *) target="$1"; shift ;;
+    esac
+  done
+  local before; before="$(current_version)"
+  bold "Updating from version $before"
+  log "update start from $before"
+  echo "1/6 Checking the server..."
+  cmd_doctor_quick || die "Fix the problems above before updating."
+  echo "2/6 Backing up..."
+  app backup --label "pre-update-$before"
+  echo "3/6 Getting the new release..."
+  local code_backup="$DATA_ROOT/releases/$before"
+  mkdir -p "$code_backup"
+  rsync -a --delete --exclude .env --exclude .git "$INSTALL_DIR/" "$code_backup/"
+  rm -f "$code_backup/.git-head"
+  if [ -z "$from" ] && [ -d "$INSTALL_DIR/.git" ]; then git -C "$INSTALL_DIR" rev-parse HEAD > "$code_backup/.git-head"; fi
+  if [ -n "$from" ]; then
+    [ -f "$from" ] || die "No file at $from"
+    local tmp; tmp="$(mktemp -d)"
+    tar -xzf "$from" -C "$tmp"
+    local src; src="$(find "$tmp" -maxdepth 2 -name VERSION -printf '%h\n' | head -1)"
+    [ -n "$src" ] || die "That file isn't an Open County Portal release (no VERSION file inside)."
+    rsync -a --delete --exclude .env --exclude .git "$src/" "$INSTALL_DIR/"
+    rm -rf "$tmp"
+  elif [ -d "$INSTALL_DIR/.git" ]; then
+    git -C "$INSTALL_DIR" fetch --tags --quiet
+    if [ -z "$target" ]; then
+      target="$(git -C "$INSTALL_DIR" tag --list 'v*' --sort=-version:refname | head -1)"
+    fi
+    [ -n "$target" ] || die "No release tags found. Name a version, for example: sudo countyctl update v1.1.0"
+    git -C "$INSTALL_DIR" -c advice.detachedHead=false checkout --quiet "$target" \
+      || die "Couldn't switch to $target. If files in $INSTALL_DIR were edited by hand, see docs/admin/updates.md."
+  else
+    die "This installation wasn't installed from git. Download a release and run: sudo countyctl update --from release.tar.gz"
+  fi
+  local after; after="$(current_version)"
+  echo "4/6 Building version $after..."
+  if image_tag current; then docker tag county-portal:current county-portal:previous; fi
+  if ! compose build app; then
+    restore_code "$code_backup"
+    die "The new version didn't build; nothing changed. Version $before is still running."
+  fi
+  echo "5/6 Starting version $after..."
+  compose up -d app
+  echo "6/6 Checking it works..."
+  if healthy 180; then
+    write_status last_update.json "{\"at\": \"$(date -Is)\", \"from\": \"$before\", \"version\": \"$after\"}"
+    log "update done $before -> $after"
+    bold "Updated to version $after. Read what changed: $INSTALL_DIR/CHANGELOG.md"
+  else
+    warn "Version $after didn't come up healthy. Going back to $before automatically..."
+    log "update failed health check; rolling back"
+    do_rollback "$before"
+    die "Update undone; version $before is running again. Your data is as it was just before the update. Send the output of 'sudo countyctl logs app' to your implementer."
+  fi
+}
+
+restore_code() {
+  local saved="$1"
+  if [ -d "$INSTALL_DIR/.git" ] && [ -f "$saved/.git-head" ]; then
+    git -C "$INSTALL_DIR" -c advice.detachedHead=false checkout --quiet --force "$(cat "$saved/.git-head")"
+  else
+    rsync -a --delete --exclude .env --exclude .git --exclude .git-head "$saved/" "$INSTALL_DIR/"
+  fi
+}
+
+do_rollback() {
+  local before="$1"
+  local code_backup="$DATA_ROOT/releases/$before"
+  [ -d "$code_backup" ] || die "No saved copy of version $before to go back to."
+  restore_code "$code_backup"
+  if image_tag previous; then docker tag county-portal:previous county-portal:current; else compose build app; fi
+  local snap="" b
+  for b in "$DATA_ROOT"/data/backups/2*-pre-update-"$before"; do
+    if [ -f "$b/manifest.json" ]; then snap="$(basename "$b")"; fi
+  done
+  compose stop app
+  if [ -n "$snap" ]; then
+    compose run --rm --no-deps app python -m portal.cli restore "$snap" --yes
+  fi
+  compose up -d app
+  healthy 180 || die "Rollback finished but the site isn't answering. Run: sudo countyctl doctor"
+}
+
+cmd_rollback() {
+  need_root rollback
+  local last="$STATUS_DIR/last_update.json"
+  [ -f "$last" ] || die "There is no recorded update to roll back."
+  local before; before="$(sed -n 's/.*"from": "\([^"]*\)".*/\1/p' "$last")"
+  echo "This returns the site to version $before and to the data from just before that update."
+  echo "Anything entered since the update will be gone from the portal (a safety backup is taken first)."
+  read -r -p "Type ROLLBACK to continue: " typed
+  [ "$typed" = "ROLLBACK" ] || die "Not confirmed; nothing changed."
+  app backup --label before-rollback
+  log "rollback to $before"
+  do_rollback "$before"
+  rm -f "$last"
+  bold "Rolled back to version $before."
+}
+
+cmd_doctor_quick() {
+  local t; for t in rsync curl docker; do command -v "$t" >/dev/null || { bad "The '$t' program is missing. Fix: sudo apt-get install -y $t"; return 1; }; done
+  docker info >/dev/null 2>&1 || { bad "Docker isn't running. Try: sudo systemctl start docker"; return 1; }
+  local free; free="$(df -Pk "$DATA_ROOT" | awk 'NR==2 {print $4}')"
+  [ "$free" -gt 5000000 ] || { bad "Less than 5 GB free on the data disk. Free space or grow the disk first."; return 1; }
+  return 0
+}
+
+cmd_doctor() {
+  need_root doctor
+  local problems=0 host
+  host="$(env_value PORTAL_HOST)"
+  bold "Checking the Open County Portal installation"
+  [ -f "$INSTALL_DIR/.env" ] && ok "Settings file found" || { bad "No settings file at $INSTALL_DIR/.env. Run the installer."; problems=$((problems+1)); }
+  if docker info >/dev/null 2>&1; then ok "Docker is running"; else bad "Docker isn't running. Fix: sudo systemctl start docker"; problems=$((problems+1)); fi
+  for s in db app web; do
+    local state; state="$(compose ps --format '{{.Service}} {{.State}} {{.Health}}' 2>/dev/null | awk -v s="$s" '$1==s {print $2" "$3}')"
+    case "$state" in
+      "running healthy"|"running ") ok "Service $s is running" ;;
+      running*) warn "Service $s is running but reports: $state" ;;
+      *) bad "Service $s is not running. Fix: sudo countyctl restart, then sudo countyctl logs $s"; problems=$((problems+1)) ;;
+    esac
+  done
+  if healthy 10; then ok "The portal answers its health check"; else bad "The portal isn't answering. See: sudo countyctl logs app"; problems=$((problems+1)); fi
+  if app check >/dev/null 2>&1; then ok "The database and data folders are in order"; else bad "Self-test failed. Run: sudo countyctl app check"; problems=$((problems+1)); fi
+  local free; free="$(df -Pk "$DATA_ROOT" | awk 'NR==2 {print int($4/1048576)}')"
+  local used; used="$(df -P "$DATA_ROOT" | awk 'NR==2 {print $5}' | tr -d %)"
+  if [ "$used" -lt 85 ]; then ok "Disk: ${free} GB free"; else bad "Disk is ${used}% full (${free} GB free). Grow the disk or move old backups off."; problems=$((problems+1)); fi
+  local mem; mem="$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo)"
+  [ "$mem" -gt 500 ] && ok "Memory: ${mem} MB available" || warn "Only ${mem} MB of memory available; the server may be too small."
+  if [ -n "$host" ]; then
+    local ip; ip="$(getent ahostsv4 "$host" 2>/dev/null | awk 'NR==1 {print $1}' || true)"
+    if [ -n "$ip" ]; then ok "$host resolves to $ip"; else warn "$host doesn't resolve in DNS yet (fine before cutover)."; fi
+    if [ "$(env_value PORTAL_TLS_MODE)" = "public" ]; then
+      if curl -fsS --max-time 10 "https://$host/healthz" >/dev/null 2>&1; then ok "https://$host works with a valid certificate"
+      else warn "https://$host isn't reachable with a valid certificate from this server. Check DNS and that ports 80 and 443 are open to the internet."; fi
+    fi
+  fi
+  if [ -f "$STATUS_DIR/last_backup.json" ]; then
+    local age; age=$(( ( $(date +%s) - $(stat -c %Y "$STATUS_DIR/last_backup.json") ) / 3600 ))
+    if [ "$age" -lt 30 ]; then ok "Last backup ${age} hours ago"; else bad "Last backup was ${age} hours ago. Check the nightly job: systemctl status county-portal-nightly.timer"; problems=$((problems+1)); fi
+  else
+    bad "No backup has run yet. Run: sudo countyctl backup"; problems=$((problems+1))
+  fi
+  if [ -n "$(env_value PORTAL_BACKUP_COPY_CMD)" ]; then ok "Backups are copied off the server"; else warn "Backups are not copied off the server. See docs/admin/backups.md"; fi
+  if [ -n "$(env_value PORTAL_SMTP_HOST)" ]; then ok "Outgoing email is configured"; else warn "Outgoing email isn't configured; receipts won't be emailed. See docs/admin/email.md"; fi
+  if systemctl is-active --quiet county-portal-nightly.timer 2>/dev/null; then ok "Nightly maintenance is scheduled"; else bad "Nightly maintenance isn't scheduled. Fix: sudo systemctl enable --now county-portal-nightly.timer"; problems=$((problems+1)); fi
+  if timedatectl show -p NTPSynchronized --value 2>/dev/null | grep -q yes; then ok "Clock is synchronized"; else warn "Clock isn't synchronized; staff sign-in codes may fail. Fix: sudo timedatectl set-ntp true"; fi
+  echo
+  if [ "$problems" -eq 0 ]; then bold "No problems found."; else bold "$problems problem(s) found. Each line above says what to do."; fi
+  [ "$problems" -eq 0 ]
+}
+
+cmd_nightly() {
+  need_root nightly
+  log "nightly start"
+  local failed=0
+  if app backup; then offsite_copy || failed=1; else failed=1; fi
+  app export-bulk || failed=1
+  app ocr --limit 20000 || true
+  app purge-uploads || failed=1
+  app postings-check > "$STATUS_DIR/postings.txt" 2>&1 || true
+  log "nightly done (failed=$failed)"
+  return "$failed"
+}
+
+main() {
+  local cmd="${1:-help}"
+  shift || true
+  case "$cmd" in
+    help|-h|--help) cmd_help ;;
+    status) cmd_status ;;
+    doctor) cmd_doctor ;;
+    logs) cmd_logs "$@" ;;
+    start) cmd_start ;;
+    stop) cmd_stop ;;
+    restart) cmd_restart ;;
+    backup) cmd_backup "$@" ;;
+    backups) cmd_backups ;;
+    restore) cmd_restore "$@" ;;
+    update) cmd_update "$@" ;;
+    rollback) cmd_rollback ;;
+    nightly) cmd_nightly ;;
+    app) need_root app; app "$@" ;;
+    version) current_version ;;
+    *) echo "Unknown command: $cmd"; echo; cmd_help; exit 2 ;;
+  esac
+}
+
+main "$@"

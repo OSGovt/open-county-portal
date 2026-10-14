@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import select
 
 from portal import config_store
-from portal.db import fees, meetings, pages, redaction_marks, tx
+from portal.db import fees, meetings, pages, redaction_marks, redirects, tx
 
 from .conftest import csrf, staff_login
 
@@ -63,11 +63,18 @@ def test_page_slug_validation(admin):
 
 
 def test_redirect_from_old_address(admin, client):
+    with tx() as conn:  # the migration tests may have imported this address already
+        conn.execute(redirects.delete().where(redirects.c.old_path == "/departments/clerk.html"))
     token = csrf(admin, "/staff/content/redirects/new")
     admin.post("/staff/content/redirects/save", data={"_csrf": token, "old_path": "/departments/clerk.html",
                                                       "new_path": "/offices/county-clerk"})
     r = client.get("/departments/clerk.html", follow_redirects=False)
     assert r.status_code == 301 and r.headers["location"] == "/offices/county-clerk"
+    # A second redirect for the same old address is refused with a message, not an error page.
+    token = csrf(admin, "/staff/content/redirects/new")
+    r = admin.post("/staff/content/redirects/save", data={"_csrf": token, "old_path": "/departments/clerk.html",
+                                                          "new_path": "/offices"})
+    assert r.status_code == 400 and "already a redirect" in r.text
 
 
 def test_fee_confirm_and_schedule(admin):

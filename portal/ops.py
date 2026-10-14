@@ -132,13 +132,8 @@ def backup(label: str = "", keep: int | None = None, log=print) -> Path:
                     shutil.rmtree(b, ignore_errors=True)
             except ValueError:
                 continue
-    copy_cmd = os.environ.get("PORTAL_BACKUP_COPY_CMD")
-    if copy_cmd:
-        log("Copying the backup off the server...")
-        r = subprocess.run(copy_cmd.replace("{path}", str(dest)), shell=True, timeout=12 * 3600)
-        _status("last_offsite.json", {"at": dt.datetime.now(dt.timezone.utc).isoformat(), "ok": r.returncode == 0,
-                                      "path": str(dest)})
-        log("Off-site copy " + ("finished." if r.returncode == 0 else f"FAILED (exit {r.returncode})."))
+    # The off-site copy (PORTAL_BACKUP_COPY_CMD) runs on the host in countyctl, where
+    # tools like rsync, rclone or a mounted share are available.
     return dest
 
 
