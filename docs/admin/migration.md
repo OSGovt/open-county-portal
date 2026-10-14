@@ -22,7 +22,9 @@ portal, that folder is called `/import`, so commands use paths that start
 with `/import/`.
 
 The import folder belongs to the administrator who ran the installer, so that
-account can copy files straight into it. Exports can be large: copy them
+account can copy files straight into it. (If the installer ran as root rather
+than with sudo, copy with `sudo`, or give the folder to your account once:
+`sudo chown "$USER" /var/lib/county-portal/import`.) Exports can be large: copy them
 directly into this folder, not to `/tmp` first, which is on the smaller system
 disk.
 
@@ -170,15 +172,27 @@ sudo countyctl app migrate records verify --batch 3
 ```
 
 It picks 50 documents at random and compares each one against the export:
-number, type, date, names, page count and image checksums. It writes an HTML
-report. Use `--sample 200` for a bigger sample.
+document type, recording date, grantor and grantee names, that the source row
+is unchanged, and that every page image matches its checksum. It writes an
+HTML report. Use `--sample 200` for a bigger sample.
 
 ### Step 7. Clerk sign-off
 
-In the staff console, **System > Imports** lists every batch. The clerk opens
-the verification report, looks up a dozen documents they know in the public
+In the staff console, **Records > Imports from the old records system** lists
+every batch (administrators also find it at **System > Imports**). The clerk,
+signed in with the `records` role, opens the verification report, looks up a dozen documents they know in the public
 search, and, when satisfied, signs off on the batch. The go-live checklist
 waits for this.
+
+### Getting report files off the server
+
+Reports such as `check-problems.csv` and `ssn-scan.csv` are in
+`/var/lib/county-portal/data/migration/`, which only administrators can
+read. To download one with WinSCP, first copy it to your home folder:
+
+```
+sudo cp /var/lib/county-portal/data/migration/check-problems.csv ~ && sudo chown "$USER" ~/check-problems.csv
+```
 
 ### Undo a batch
 
@@ -267,7 +281,10 @@ sudo countyctl app migrate bills load /var/lib/county-portal/data/migration/bill
 ```
 
 New accounts are added and existing ones updated. It prints the batch
-number. To put the bills back exactly as they were before the latest load:
+number. If a load was wrong, undo it as soon as you notice. Undo takes a
+backup, puts every account of that kind back the way it was before the load,
+and subtracts any payments taken since, so residents who paid aren't shown as
+owing again. Only the latest load of each kind can be undone:
 
 ```
 sudo countyctl app migrate bills undo --batch 7
@@ -369,7 +386,8 @@ redirect if you moved content elsewhere.
 
 ## Check
 
-- The clerk has signed off every records batch (**System > Imports**).
+- The clerk has signed off every records batch (**Records > Imports from the
+  old records system**).
 - Bills total matches the billing system.
 - Spot-check 20 old addresses: `https://new-address/old/page.html` should land
   on the right new page.

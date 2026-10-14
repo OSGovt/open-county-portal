@@ -145,11 +145,12 @@ The practice runs on a test server so the live site isn't affected.
 
 1. Install the portal on a test server ([Install](install.md), `internal`
    certificate mode).
-2. Copy a backup folder from your off-site destination to the test server's
-   `/var/lib/county-portal/data/backups/` folder, then fix its owner:
+2. Copy a backup folder from your off-site destination to your home folder
+   on the test server (for example with WinSCP or `rsync`), then move it into
+   place and fix its owner:
 
 ```
-sudo chown -R 1000:1000 /var/lib/county-portal/data/backups
+sudo mv ~/20261014-073000 /var/lib/county-portal/data/backups/ && sudo chown -R 1000:1000 /var/lib/county-portal/data/backups
 ```
 
 3. Restore it:
@@ -182,9 +183,9 @@ sudo nano /opt/county-portal/.env
 cd /opt/county-portal && sudo docker compose down && sudo rm -rf /var/lib/county-portal/postgres && sudo docker compose up -d
 ```
 
-4. Copy the newest backup from off-site into
-   `/var/lib/county-portal/data/backups/`, fix the owner as above, and
-   restore it with `sudo countyctl restore NAME`.
+4. Copy the newest backup from off-site to your home folder, move it into
+   place and fix the owner as above, and restore it with
+   `sudo countyctl restore NAME`.
 5. Point DNS at the new server if its address changed.
 6. Run `sudo countyctl doctor`.
 

@@ -172,6 +172,9 @@ def undo(batch: int, log=print) -> None:
         raise SystemExit(f"No saved state for batch {batch}; it can't be undone.")
     data = json.loads(snap.read_text(encoding="utf-8"))
     kind = data["kind"]
+    from .. import ops
+    log("Taking a backup before undoing...")
+    ops.backup(label=f"before-bills-undo-{batch}", log=log)
     with tx() as conn:
         latest = conn.execute(select(import_batches.c.id).where(import_batches.c.kind == f"bills:{kind}",
                                                                 import_batches.c.status != "undone")
@@ -179,6 +182,17 @@ def undo(batch: int, log=print) -> None:
         if latest != batch:
             raise SystemExit(f"Batch {batch} isn't the latest {kind} load (that's batch {latest}). Undo that one first.")
         before = {r["account"]: r for r in data["rows"]}
+        # Payments taken since the load still count: subtract them from the restored balances.
+        from sqlalchemy import func
+        from ..db import order_lines, orders
+        started = conn.execute(select(import_batches.c.started_at).where(import_batches.c.id == batch)).scalar_one()
+        paid_since = {(r.office_slug, r.ref): int(r.total) for r in conn.execute(
+            select(order_lines.c.office_slug, order_lines.c.ref, func.sum(order_lines.c.amount_cents).label("total"))
+            .select_from(order_lines.join(orders, orders.c.id == order_lines.c.order_id))
+            .where(order_lines.c.kind == "receivable", orders.c.status == "paid", orders.c.paid_at >= started)
+            .group_by(order_lines.c.office_slug, order_lines.c.ref))}
+        for account, r in before.items():
+            r["amount_due_cents"] = max(0, int(r["amount_due_cents"] or 0) - paid_since.get((r["office_slug"], account), 0))
         gone = receivables.delete().where(receivables.c.kind == kind)
         if before:
             gone = gone.where(receivables.c.account.notin_(list(before)))
@@ -194,4 +208,5 @@ def undo(batch: int, log=print) -> None:
                 conn.execute(receivables.insert().values(kind=kind, account=account, **values))
         conn.execute(import_batches.update().where(import_batches.c.id == batch).values(status="undone"))
         audit(conn, "migration", "bills.undo", "import_batch", batch, {"kind": kind, "accounts": len(before)})
-    log(f"Batch {batch} undone: {kind} bills are back to how they were before it ({len(before):,} accounts).")
+    log(f"Batch {batch} undone: {kind} bills are back to how they were before it ({len(before):,} accounts), "
+        "less any payments taken since.")

@@ -2,6 +2,7 @@
 {% block staff %}
 <h1>Open a drawer</h1>
 <p>Count the starting cash in the drawer and enter it below. Every sale today will be recorded against this drawer.</p>
+{% if can('supervisor') %}<p>Supervisors: to void a sale, go to <a href="/staff/counter/close">Close drawer and void</a>; no drawer is needed.</p>{% endif %}
 {% if not my_offices %}
 <p class="flash error">Your account isn't assigned to an office yet. Ask an administrator to add your office under Settings, Staff accounts.</p>
 {% else %}

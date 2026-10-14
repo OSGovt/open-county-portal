@@ -126,7 +126,7 @@ def current_staff(request: Request, conn: Connection) -> dict | None:
     from .settings import get_settings
     now = time.time()
     seen = request.session.get("staff_seen", now)
-    since = request.session.get("staff_since", now)
+    since = request.session.setdefault("staff_since", now)
     if now - seen > STAFF_IDLE_SECONDS or now - since > get_settings().staff_session_max_age:
         for key in ("staff_id", "staff_name", "staff_mfa_ok", "staff_seen", "staff_since"):
             request.session.pop(key, None)

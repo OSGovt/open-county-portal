@@ -15,6 +15,7 @@ from sqlalchemy import select
 import pytest
 
 from portal import cli
+from portal.settings import get_settings
 from portal.db import import_batches, instruments, pages, receivables, redirects, tx
 
 
@@ -100,13 +101,25 @@ def test_bills_sync(tmp_path, capsys):
         demo = conn.execute(select(receivables.c.amount_due_cents).where(receivables.c.account == "R000456")).scalar_one()
     assert t1 == 125075
     assert demo == 0  # sync: accounts missing from the new roll are set to $0 due
-    # Undo puts the bills back exactly as before the load.
+    # Undo puts the bills back as before the load, less payments taken since.
     batch = int(re.search(r"Batch (\d+)\. Bills", capsys.readouterr().out).group(1))
+    from portal.db import order_lines, orders, utcnow
+    with tx() as conn:
+        snap_r456 = [r for r in __import__("json").loads(
+            (get_settings().migration_dir / "bills-undo" / f"batch-{batch}.json").read_text())["rows"]
+            if r["account"] == "R000456"][0]
+        oid = conn.execute(orders.insert().values(number="TEST-UNDO-1", token="t", channel="counter", status="paid",
+                                                  subtotal_cents=1000, total_cents=1000, paid_at=utcnow())
+                           .returning(orders.c.id)).scalar_one()
+        conn.execute(order_lines.insert().values(order_id=oid, office_slug=snap_r456["office_slug"], kind="receivable",
+                                                 label="Tax", qty=1, unit_cents=1000, amount_cents=1000, ref="R000456"))
     assert cli.main(["migrate", "bills", "undo", "--batch", str(batch)]) == 0
     with tx() as conn:
         assert conn.execute(select(receivables.c.id).where(receivables.c.account == "T-1")).first() is None
         assert conn.execute(select(receivables.c.amount_due_cents)
-                            .where(receivables.c.account == "R000456")).scalar_one() > 0
+                            .where(receivables.c.account == "R000456")).scalar_one() == snap_r456["amount_due_cents"] - 1000
+        conn.execute(order_lines.delete().where(order_lines.c.order_id == oid))
+        conn.execute(orders.delete().where(orders.c.id == oid))
 
 
 def test_bill_sync_refuses_truncated_file(tmp_path):
