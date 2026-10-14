@@ -6,6 +6,15 @@
 # come up healthy. Run 'sudo countyctl help' for the list.
 set -Eeuo pipefail
 
+# Updates replace this very file. Run from a private copy so bash never reads
+# a half-replaced script.
+if [ -z "${COUNTYCTL_COPY:-}" ]; then
+  _copy="$(mktemp /tmp/countyctl.XXXXXX)"
+  cp "$0" "$_copy"
+  COUNTYCTL_COPY=1 exec bash "$_copy" "$@"
+fi
+rm -f "$0"
+
 INSTALL_DIR="${COUNTY_PORTAL_DIR:-/opt/county-portal}"
 DATA_ROOT="/var/lib/county-portal"
 STATUS_DIR="$DATA_ROOT/data/status"
@@ -227,7 +236,8 @@ cmd_update() {
     die "The new version didn't build; nothing changed. Version $before is still running."
   fi
   echo "5/6 Starting version $after..."
-  compose up -d app
+  compose pull --quiet db web || warn "Couldn't check for database and web server updates; continuing with the current ones."
+  compose up -d
   echo "6/6 Checking it works..."
   if healthy 180; then
     write_status last_update.json "{\"at\": \"$(date -Is)\", \"from\": \"$before\", \"version\": \"$after\"}"
@@ -333,8 +343,9 @@ cmd_doctor() {
   if systemctl is-active --quiet county-portal-nightly.timer 2>/dev/null; then ok "Nightly maintenance is scheduled"; else bad "Nightly maintenance isn't scheduled. Fix: sudo systemctl enable --now county-portal-nightly.timer"; problems=$((problems+1)); fi
   if timedatectl show -p NTPSynchronized --value 2>/dev/null | grep -q yes; then ok "Clock is synchronized"; else warn "Clock isn't synchronized; staff sign-in codes may fail. Fix: sudo timedatectl set-ntp true"; fi
   echo
-  if [ "$problems" -eq 0 ]; then bold "No problems found."; else bold "$problems problem(s) found. Each line above says what to do."; fi
-  [ "$problems" -eq 0 ]
+  if [ "$problems" -eq 0 ]; then bold "No problems found."; return 0; fi
+  bold "$problems problem(s) found. Each line above says what to do."
+  return 1
 }
 
 cmd_nightly() {
@@ -356,7 +367,7 @@ main() {
   case "$cmd" in
     help|-h|--help) cmd_help ;;
     status) cmd_status ;;
-    doctor) cmd_doctor ;;
+    doctor) cmd_doctor || exit 1 ;;
     logs) cmd_logs "$@" ;;
     start) cmd_start ;;
     stop) cmd_stop ;;
@@ -366,7 +377,7 @@ main() {
     restore) cmd_restore "$@" ;;
     update) cmd_update "$@" ;;
     rollback) cmd_rollback ;;
-    nightly) cmd_nightly ;;
+    nightly) cmd_nightly || exit 1 ;;
     app) need_root app; app "$@" ;;
     version) current_version ;;
     *) echo "Unknown command: $cmd"; echo; cmd_help; exit 2 ;;

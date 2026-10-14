@@ -10,7 +10,7 @@ from fastapi.responses import RedirectResponse, Response
 from .. import config_store, images as img, records as rec_mod, statepacks
 from ..db import applications, audit, next_number, redaction_requests, tx
 from ..db import get_engine
-from ..web import client_ip, flash, render, verify_csrf
+from ..web import client_ip, flash, records_office_name, render, verify_csrf
 
 router = APIRouter()
 
@@ -80,7 +80,7 @@ async def redaction_submit(request: Request):
         number = next_number(conn, "redaction", "RR")
         conn.execute(redaction_requests.insert().values(number=number, **values))
         audit(conn, None, "redaction.request", "redaction_request", number, ip=client_ip(request))
-    flash(request, f"Request {number} received. The County Clerk will verify your eligibility and contact you. "
+    flash(request, f"Request {number} received. The {records_office_name()} will verify your eligibility and contact you. "
                    "You will also need to submit the state's signed form if you have not already.")
     return RedirectResponse("/records", status_code=303)
 
@@ -179,9 +179,12 @@ async def accessible_version(request: Request, number: str):
             flash(request, "Enter your email address so the clerk can send the accessible version.", "error")
             return RedirectResponse(f"/records/{number}#accessible", status_code=303)
         app_no = next_number(conn, "application", "AP")
-        conn.execute(applications.insert().values(number=app_no, form="accessible-version", office_slug="county-clerk",
+        from sqlalchemy import select
+        from ..db import services
+        office = conn.execute(select(services.c.office_slug).where(services.c.slug == "property-records")).scalar()
+        conn.execute(applications.insert().values(number=app_no, form="accessible-version", office_slug=office,
                                                   data={"instrument_number": number, "needs": str(form.get("needs", ""))},
                                                   email=email))
         audit(conn, None, "records.accessible_request", "instrument", number, ip=client_ip(request))
-    flash(request, f"Request {app_no} sent. The County Clerk will email an accessible version of {number}.")
+    flash(request, f"Request {app_no} sent. The records office will email an accessible version of {number}.")
     return RedirectResponse(f"/records/{number}", status_code=303)

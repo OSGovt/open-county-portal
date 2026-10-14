@@ -84,6 +84,21 @@ def doclinks(text: str) -> Markup:
     return Markup(_re.sub(r"docs/([a-z0-9_/-]+)\.md", lambda m: f'<a href="/staff/help/{m.group(1)}">the guide</a>', out))
 
 
+def records_office_name() -> str:
+    """The office that keeps land records here (County Clerk, County Recorder, ...)."""
+    from sqlalchemy import select
+    from .db import offices, services
+    try:
+        with get_engine().connect() as conn:
+            name = conn.execute(select(offices.c.name).select_from(
+                services.join(offices, offices.c.slug == services.c.office_slug))
+                .where(services.c.slug == "property-records")).scalar()
+    except Exception:
+        name = None
+    return name or "records office"
+
+
+templates.env.globals["records_office_name"] = records_office_name
 templates.env.filters["money"] = money
 templates.env.filters["doclinks"] = doclinks
 templates.env.filters["markdown"] = markdown

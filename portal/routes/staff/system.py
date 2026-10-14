@@ -23,7 +23,7 @@ MANUAL_CHECKS = [
     ("fees_signed", "The clerk or finance office reviewed every fee against the adopted fee order."),
     ("staff_trained", "Every office's staff practiced their tasks with sample data."),
     ("content_reviewed", "Each office reviewed its service and office pages."),
-    ("records_signed", "The County Clerk signed off on the records import report."),
+    ("records_signed", "The official who keeps the land records (such as the County Clerk) signed off on the records import report."),
     ("datagov", "The Data.gov harvest request was submitted (docs/admin/data-gov.md)."),
     ("offsite_backup", "Backups are copied off the server, and a restore was practiced."),
     ("cutover_plan", "The cutover plan and the way back were reviewed (docs/admin/cutover.md)."),

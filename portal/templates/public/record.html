@@ -59,7 +59,7 @@
       <a class="btn secondary" href="/records/{{ r.instrument_number }}/download.pdf" download>Download free copy (PDF)</a>
       {% endif %}
       <h3 style="margin-top: 1.25rem">Certified copy</h3>
-      <p>A copy the County Clerk certifies as true and correct, for courts, lenders, and title work.</p>
+      <p>A copy the {{ records_office_name() }} certifies as true and correct, for courts, lenders, and title work.</p>
       <form method="post" action="/cart/add" class="stack">
         <input type="hidden" name="_csrf" value="{{ csrf }}">
         <input type="hidden" name="kind" value="certified_copy">

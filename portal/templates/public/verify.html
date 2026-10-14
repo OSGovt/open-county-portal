@@ -12,9 +12,9 @@
   <p>To confirm a PDF you were given is unaltered, compute its SHA-256 checksum and compare it with the value above. On Windows: <code>certutil -hashfile file.pdf SHA256</code>. On a Mac or Linux: <code>shasum -a 256 file.pdf</code>.</p>
   <p><a class="btn secondary" href="/verify/{{ code }}/download">Download the certified copy</a></p>
   {% elif c and c.revoked %}
-  <p class="flash error">Certified copy {{ code }} was revoked by the issuing office. Contact the County Clerk.</p>
+  <p class="flash error">Certified copy {{ code }} was revoked by the issuing office. Contact the {{ records_office_name() }}.</p>
   {% else %}
-  <p class="flash error">No certified copy has the code {{ code }}. Check the code, or contact the County Clerk.</p>
+  <p class="flash error">No certified copy has the code {{ code }}. Check the code, or contact the {{ records_office_name() }}.</p>
   {% endif %}
 </div>
 {% endblock %}

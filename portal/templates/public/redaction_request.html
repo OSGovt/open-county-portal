@@ -3,7 +3,7 @@
 {% block content %}
 <div style="max-width: 46rem">
 <h1>Ask to remove personal information from online records</h1>
-<p>State law lets certain people ask the County Clerk to hide their {{ (rules.fields or ['personal information'])|join(', ') }} in the online records database. The official records are not changed.</p>
+<p>State law lets certain people ask the {{ records_office_name() }} to hide their {{ (rules.fields or ['personal information'])|join(', ') }} in the online records database. The official records are not changed.</p>
 {% if rules.law %}<p class="muted small">Authority: {{ rules.law }}</p>{% endif %}
 {% if rules.form_note %}<p class="notice">{{ rules.form_note }}</p>{% endif %}
 {{ error_summary(errors) }}

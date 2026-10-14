@@ -75,7 +75,7 @@ See [Backups](backups.md).
 | **Settings > Payments, records and open data** | Processor, payment methods, processing fees, merchant accounts, free downloads, open data terms and contact. See [Payments](payments.md) and [Data.gov](data-gov.md) |
 | **Settings > Staff accounts** | Add, change roles, reset, disable. See [Staff accounts](staff-accounts.md) |
 | **Settings > API keys** | Free keys for heavy users of the open API (they only raise the rate limit) |
-| **Settings > Forms** | Custom forms residents can submit |
+| **Settings > Custom forms** | Forms residents can submit, beyond those in the state pack |
 | **Content > Fee schedule** | Fees with effective dates and the adopting order |
 | **System** | Version, backups, imports, go-live checklist, audit log |
 

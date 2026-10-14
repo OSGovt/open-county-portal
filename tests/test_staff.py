@@ -233,3 +233,15 @@ def test_schema_upgrade_steps_run_in_order(monkeypatch):
         with tx() as conn:
             conn.execute(text("DROP TABLE IF EXISTS upgrade_probe"))
             conn.execute(db.schema_info.delete().where(db.schema_info.c.version > before))
+
+
+def test_every_guide_renders_in_help(admin):
+    from pathlib import Path
+    docs = Path(__file__).resolve().parent.parent / "docs"
+    for md in sorted(docs.rglob("*.md")):
+        rel = md.relative_to(docs).with_suffix("").as_posix()
+        r = admin.get(f"/staff/help/{rel}")
+        assert r.status_code == 200, rel
+        assert "<h1" in r.text, rel
+    # links between guides point inside Help
+    assert 'href="/staff/help/admin/install"' in admin.get("/staff/help/admin/README").text
