@@ -80,7 +80,7 @@ async def redaction_update(request: Request, number: str):
 def _refresh_flags(conn, image_ids):
     for iid in set(image_ids):
         has = conn.execute(select(redaction_marks.c.id).where(redaction_marks.c.image_id == iid).limit(1)).first() is not None
-        conn.execute(images.update().where(images.c.id == iid).values(redacted=has, updated_at=utcnow()))
+        conn.execute(images.update().where(images.c.id == iid).values(redacted=has, public_text=None, updated_at=utcnow()))
         inst = conn.execute(select(images.c.instrument_id).where(images.c.id == iid)).scalar()
         conn.execute(instruments.update().where(instruments.c.id == inst).values(updated_at=utcnow()))
 
@@ -208,7 +208,8 @@ async def rerun_ocr(request: Request, number: str):
             raise HTTPException(404)
         for i in r["images"]:
             text = img.ocr(get_settings().images_dir / i["path"], i["frame"])
-            conn.execute(images.update().where(images.c.id == i["id"]).values(ocr_text=text, updated_at=utcnow()))
+            conn.execute(images.update().where(images.c.id == i["id"]).values(ocr_text=text, public_text=None,
+                                                                             updated_at=utcnow()))
         audit(conn, user["email"], "instrument.ocr", "instrument", number)
     flash(request, "Text re-read from every page.")
     return RedirectResponse(f"/staff/records/{number}", status_code=303)

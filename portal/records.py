@@ -101,6 +101,9 @@ def get(conn: Connection, number: str, include_restricted: bool = False) -> dict
     attach_parties(conn, [rec])
     rec["images"] = [dict(i) for i in conn.execute(select(images).where(images.c.instrument_id == rec["id"])
                                                    .order_by(images.c.seq)).mappings()]
+    if not include_restricted:
+        for i in rec["images"]:
+            i["ocr_text"] = public_text(i)
     return rec
 
 
@@ -120,3 +123,12 @@ def parse_date(text: str | None) -> dt.date | None:
         return dt.date.fromisoformat(text.strip())
     except ValueError:
         return None
+
+
+def public_text(image: dict) -> str | None:
+    """Text that may be shown to the public for a page. Machine-read text from
+    the original image could contain what a redaction box hides, so a redacted
+    page only shows text read from the redacted version (None until it's read)."""
+    if image.get("redacted"):
+        return image.get("public_text")
+    return image.get("ocr_text")

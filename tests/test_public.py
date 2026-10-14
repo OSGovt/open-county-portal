@@ -111,3 +111,33 @@ def test_source_code_offered(client):
     names = tarfile.open(fileobj=io.BytesIO(r.content)).getnames()
     assert any(n.endswith("/LICENSE") for n in names) and any(n.endswith("portal/app.py") for n in names)
     assert not any("__pycache__" in n for n in names)
+
+
+def test_redacted_page_text_never_shows_original(client):
+    """A redaction box hides part of the image; the machine-read text of the
+    original must not leak what it hides, on the page or through the API."""
+    from sqlalchemy import select
+
+    from portal.db import images, instruments, redaction_marks, tx
+    with tx() as conn:
+        inst = conn.execute(select(instruments).where(instruments.c.status == "public")
+                            .order_by(instruments.c.id)).mappings().first()
+        img = conn.execute(select(images).where(images.c.instrument_id == inst["id"], images.c.seq == 1)).mappings().first()
+        old_text = img["ocr_text"]
+        conn.execute(images.update().where(images.c.id == img["id"])
+                     .values(ocr_text="Grantor SSN 123-45-6789 SECRETWORD", redacted=True, public_text=None))
+        mark = conn.execute(redaction_marks.insert().values(image_id=img["id"], x=10, y=10, w=100, h=20, reason="test")
+                            .returning(redaction_marks.c.id)).scalar_one()
+    try:
+        number = inst["instrument_number"]
+        assert "SECRETWORD" not in client.get(f"/records/{number}").text
+        api = client.get(f"/api/v1/instruments/{number}").json()
+        assert all(i["text"] is None for i in api["images"] if i["seq"] == 1)
+        with tx() as conn:
+            conn.execute(images.update().where(images.c.id == img["id"]).values(public_text="Grantor SSN [redacted]"))
+        assert "Grantor SSN [redacted]" in client.get(f"/records/{number}").text
+    finally:
+        with tx() as conn:
+            conn.execute(redaction_marks.delete().where(redaction_marks.c.id == mark))
+            conn.execute(images.update().where(images.c.id == img["id"])
+                         .values(ocr_text=old_text, redacted=False, public_text=None))

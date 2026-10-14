@@ -254,7 +254,24 @@ def cmd_ocr(a) -> int:
         done += 1
         if done % 50 == 0:
             say(f"  {done} pages read...")
-    say(f"OCR finished for {done} page(s).")
+    # Redacted pages: read the text again from the redacted version, for public display.
+    from .db import redaction_marks
+    from .images import cached_page, ocr_png
+    redone = 0
+    with get_engine().connect() as conn:
+        redacted = conn.execute(select(images).where(images.c.redacted.is_(True), images.c.public_text.is_(None))
+                                .limit(a.limit)).mappings().all()
+    for row in redacted:
+        with get_engine().connect() as conn:
+            marks = [dict(m) for m in conn.execute(select(redaction_marks.c.x, redaction_marks.c.y, redaction_marks.c.w,
+                                                          redaction_marks.c.h)
+                                                   .where(redaction_marks.c.image_id == row["id"])).mappings()]
+        text = ocr_png(cached_page(dict(row), marks))
+        with tx() as conn:
+            conn.execute(images.update().where(images.c.id == row["id"], images.c.redacted.is_(True))
+                         .values(public_text=text))
+        redone += 1
+    say(f"OCR finished for {done} page(s)" + (f", and {redone} redacted page(s) re-read." if redone else "."))
     return 0
 
 

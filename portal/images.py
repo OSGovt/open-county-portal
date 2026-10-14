@@ -132,6 +132,14 @@ SENSITIVE_PATTERNS = {
 }
 
 
+def ocr_png(png: bytes) -> str:
+    """Machine-read text from PNG bytes (used on redacted renderings)."""
+    if not ocr_available():
+        return ""
+    proc = subprocess.run(["tesseract", "stdin", "stdout", "--psm", "3"], input=png, capture_output=True, timeout=180)
+    return proc.stdout.decode("utf-8", "replace").strip()
+
+
 def find_sensitive(path: Path, frame: int = 0) -> list[dict]:
     """Suggest redaction boxes for text that looks like a Social Security
     number. Suggestions only: a person reviews every one before it is applied."""

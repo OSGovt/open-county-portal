@@ -196,7 +196,8 @@ images = Table(
     Column("mime", String(100)),
     Column("sha256", String(64), nullable=False),
     Column("bytes", BigInteger),
-    Column("ocr_text", Text),
+    Column("ocr_text", Text),             # machine-read text of the original page (staff only once redacted)
+    Column("public_text", Text),          # text read from the redacted page; NULL until read
     Column("redacted", Boolean, nullable=False, default=False),
     _updated(),
     UniqueConstraint("instrument_id", "seq", name="uq_image_seq"),
