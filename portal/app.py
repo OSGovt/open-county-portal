@@ -77,8 +77,8 @@ def create_app() -> FastAPI:
                                     status_code=429, headers={"Retry-After": "60"})
         response: Response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
-        if demo_mode_on:
-            response.headers.setdefault("X-Robots-Tag", "noindex, nofollow, noarchive")
+        if demo_mode_on and path.startswith(("/records", "/api/", "/pay", "/receipt/", "/verify/", "/staff/")):
+            response.headers.setdefault("X-Robots-Tag", "noindex, noarchive")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         response.headers.setdefault("Permissions-Policy", "camera=(self), geolocation=(), microphone=()")
         if not path.startswith("/api/") and path not in ("/data.json", "/data-v1.1.json"):
@@ -125,8 +125,14 @@ def create_app() -> FastAPI:
     def robots() -> PlainTextResponse:
         b = settings.base_path
         from .auth import demo_mode
-        if demo_mode():  # fictional records must never show up in search engines or AI training sets
-            return PlainTextResponse("User-agent: *\nDisallow: /\n")
+        if demo_mode():
+            # Search engines may index the demonstration's pages, but not its fictional records,
+            # bills and receipts: invented names shouldn't turn up in a search for a real person.
+            # Keeping crawlers off 200,000 record pages also lets the demo sleep.
+            blocked = ["/records", "/api/", "/pay", "/cart", "/checkout", "/receipt/", "/verify/", "/staff/",
+                       "/apply/", "/search", "/payments/", "/files/"]
+            return PlainTextResponse("User-agent: *\n" + "".join(f"Disallow: {b}{p}\n" for p in blocked)
+                                     + f"Sitemap: {settings.site_url}/sitemap.xml\n")
         return PlainTextResponse(f"User-agent: *\nDisallow: {b}/staff/\nDisallow: {b}/cart\nDisallow: {b}/checkout\n"
                                  f"Sitemap: {settings.site_url}/sitemap.xml\n")
 

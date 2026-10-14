@@ -201,8 +201,10 @@ def test_demo_mode_keeps_crawlers_out(monkeypatch):
     from portal.app import create_app
     monkeypatch.setenv("PORTAL_DEMO_MODE", "1")
     with TestClient(create_app()) as c:
-        assert c.get("/robots.txt").text == "User-agent: *\nDisallow: /\n"
-        assert "noindex" in c.get("/").headers["x-robots-tag"]
+        robots = c.get("/robots.txt").text
+        assert "Disallow: /records" in robots and "Disallow: /api/" in robots and "Disallow: /\n" not in robots
+        assert "x-robots-tag" not in c.get("/").headers  # the demo's pages can be found in search
+        assert "noindex" in c.get("/records?name=smith").headers["x-robots-tag"]
     monkeypatch.delenv("PORTAL_DEMO_MODE")
     with TestClient(create_app()) as c:
         assert "Disallow: /staff/" in c.get("/robots.txt").text
