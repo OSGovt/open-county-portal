@@ -34,8 +34,9 @@ COPY Dockerfile docker-compose.yml requirements.txt requirements-dev.txt VERSION
 
 USER portal
 EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=4).status == 200 else 1)"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=300s --retries=3 \
+  CMD python -c "import os,urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:%s/healthz' % os.environ.get('PORT', '8000'), timeout=4).status == 200 else 1)"
 
 # Bring the database up to date, then serve. Workers default to 4; set PORTAL_WORKERS in .env to change.
-CMD ["sh", "-c", "python -m portal.cli upgrade-db && exec uvicorn 'portal.app:create_app' --factory --host 0.0.0.0 --port 8000 --workers ${PORTAL_WORKERS:-4} --proxy-headers --forwarded-allow-ips='*'"]
+# PORT is set by hosting platforms such as Render; bootstrap does nothing unless PORTAL_BOOTSTRAP_NAME is set.
+CMD ["sh", "-c", "python -m portal.cli upgrade-db && python -m portal.cli bootstrap && exec uvicorn 'portal.app:create_app' --factory --host 0.0.0.0 --port ${PORT:-8000} --workers ${PORTAL_WORKERS:-4} --proxy-headers --forwarded-allow-ips='*'"]

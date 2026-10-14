@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api/v1", tags=["Open data"])
 class Image(BaseModel):
     seq: int
     url: str
-    sha256: str
+    sha256: Optional[str] = None  # None for demonstration pages drawn on demand
     text: Optional[str] = None
 
 
@@ -59,7 +59,7 @@ def _instrument(r: dict, base: str, with_images: bool = False) -> dict:
     out["pdf_url"] = f"{base}/records/{r['instrument_number']}/download.pdf"
     if with_images:
         out["images"] = [{"seq": i["seq"], "url": f"{base}/records/{r['instrument_number']}/pages/{i['seq']}.png",
-                          "sha256": i["sha256"], "text": rec_mod.public_text(i)} for i in r.get("images", [])]
+                          "sha256": i["sha256"] or None, "text": rec_mod.public_text(i)} for i in r.get("images", [])]
     return out
 
 

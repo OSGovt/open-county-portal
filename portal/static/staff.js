@@ -14,7 +14,7 @@
   }
   stay.addEventListener("click", function () {
     var token = document.querySelector("input[name=_csrf]");
-    fetch("/staff/ping", { method: "POST", credentials: "same-origin",
+    fetch((document.documentElement.getAttribute("data-base") || "") + "/staff/ping", { method: "POST", credentials: "same-origin",
       headers: { "x-csrf-token": token ? token.value : "" } }).finally(function () {
       box.hidden = true; arm();
     });

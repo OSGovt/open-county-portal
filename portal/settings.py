@@ -23,6 +23,7 @@ class Settings:
     secret_key: str
     data_dir: Path
     site_url: str
+    base_path: str
     environment: str
     secure_cookies: bool
     session_max_age: int
@@ -66,6 +67,20 @@ class Settings:
             d.mkdir(parents=True, exist_ok=True)
 
 
+def _db_url(url: str) -> str:
+    """Accept the postgres:// or postgresql:// addresses hosting platforms hand out."""
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
+
+
+def _base_path(value: str) -> str:
+    """'/utopia' for a portal served from a subfolder, '' at the root of its address."""
+    value = value.strip().strip("/")
+    return f"/{value}" if value else ""
+
+
 def load_settings() -> Settings:
     secret = os.environ.get("PORTAL_SECRET_KEY", "")
     env = os.environ.get("PORTAL_ENV", "production")
@@ -77,10 +92,12 @@ def load_settings() -> Settings:
             )
         secret = "development-only-secret-key-do-not-use-in-production"
     return Settings(
-        database_url=os.environ.get("PORTAL_DATABASE_URL", "postgresql+psycopg://portal@localhost/portal"),
+        database_url=_db_url(os.environ.get("PORTAL_DATABASE_URL") or os.environ.get("DATABASE_URL")
+                             or "postgresql+psycopg://portal@localhost/portal"),
         secret_key=secret,
         data_dir=Path(os.environ.get("PORTAL_DATA_DIR", "/var/lib/county-portal/data")),
         site_url=os.environ.get("PORTAL_SITE_URL", "http://localhost:8000").rstrip("/"),
+        base_path=_base_path(os.environ.get("PORTAL_BASE_PATH", "")),
         environment=env,
         secure_cookies=_bool(os.environ.get("PORTAL_SECURE_COOKIES"), default=(env == "production")),
         session_max_age=int(os.environ.get("PORTAL_SESSION_MAX_AGE", str(60 * 60 * 24))),

@@ -91,9 +91,18 @@ def create_app() -> FastAPI:
         return response
 
     app.add_middleware(SessionMiddleware, secret_key=settings.secret_key, session_cookie="portal_session",
-                       max_age=settings.session_max_age, same_site="lax", https_only=settings.secure_cookies)
+                       max_age=settings.session_max_age, same_site="lax", https_only=settings.secure_cookies,
+                       path=settings.base_path or "/")
+    if settings.base_path:  # outermost: everything inside sees plain paths
+        from .basepath import BasePathMiddleware
+        app.add_middleware(BasePathMiddleware, base=settings.base_path)
 
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+    import os
+    if os.environ.get("PORTAL_NIGHTLY_IN_APP", "").lower() in ("1", "true", "yes"):
+        from . import scheduler
+        scheduler.start()
 
     @app.get("/theme.css", include_in_schema=False)
     def theme_css() -> Response:
@@ -110,7 +119,8 @@ def create_app() -> FastAPI:
 
     @app.get("/robots.txt", include_in_schema=False)
     def robots() -> PlainTextResponse:
-        return PlainTextResponse("User-agent: *\nDisallow: /staff/\nDisallow: /cart\nDisallow: /checkout\n"
+        b = settings.base_path
+        return PlainTextResponse(f"User-agent: *\nDisallow: {b}/staff/\nDisallow: {b}/cart\nDisallow: {b}/checkout\n"
                                  f"Sitemap: {settings.site_url}/sitemap.xml\n")
 
     from .routes import api, apply, meetings, pay, public, records, staff  # noqa: E402

@@ -30,6 +30,9 @@ def sha256_file(path: Path) -> str:
 
 
 def open_frame(path: Path, frame: int = 0) -> Image.Image:
+    from .demo.pages import is_synthetic, render
+    if is_synthetic(path) and not Path(path).exists():
+        return render(path)  # demonstration page, drawn on demand
     img = Image.open(path)
     if frame:
         img.seek(frame)
@@ -40,6 +43,9 @@ def open_frame(path: Path, frame: int = 0) -> Image.Image:
 
 
 def frame_count(path: Path) -> int:
+    from .demo.pages import is_synthetic
+    if is_synthetic(path) and not Path(path).exists():
+        return 1
     with Image.open(path) as img:
         return getattr(img, "n_frames", 1)
 

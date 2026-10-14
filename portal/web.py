@@ -99,6 +99,7 @@ def records_office_name() -> str:
 
 
 templates.env.globals["records_office_name"] = records_office_name
+templates.env.globals["base_path"] = lambda: get_settings().base_path
 templates.env.filters["money"] = money
 templates.env.filters["doclinks"] = doclinks
 templates.env.filters["markdown"] = markdown

@@ -157,3 +157,39 @@ def test_change_feed_reports_unpublished_as_delete(client):
     finally:
         with tx() as conn:
             conn.execute(services.update().where(services.c.slug == slug).values(published=True))
+
+
+def test_served_from_a_subfolder(monkeypatch):
+    """PORTAL_BASE_PATH=/utopia: links, forms, redirects and cookies stay inside the subfolder."""
+    import re as _re
+
+    from fastapi.testclient import TestClient
+
+    from portal.app import create_app
+    from portal.settings import reset_settings_cache
+    monkeypatch.setenv("PORTAL_BASE_PATH", "/utopia")
+    monkeypatch.setenv("PORTAL_SITE_URL", "http://testserver/utopia")
+    reset_settings_cache()
+    try:
+        with TestClient(create_app()) as c:
+            home = c.get("/utopia/")
+            assert home.status_code == 200
+            links = _re.findall(r'(?:href|src|action)="(/[^"/][^"]*)"', home.text)
+            assert links and all(l.startswith("/utopia/") or l == "/utopia" for l in links), links[:10]
+            assert 'data-base="/utopia"' in home.text
+            # also reachable when the front door strips the prefix
+            assert c.get("/records").status_code == 200
+            r = c.get("/utopia/staff/", follow_redirects=False)
+            assert r.headers["location"].startswith("/utopia/staff/login")
+            login = c.get("/utopia/staff/login")
+            assert 'action="/utopia/staff/login"' in login.text
+            assert "path=/utopia" in login.headers.get("set-cookie", "").lower() or "portal_session" not in login.headers.get("set-cookie", "")
+            assert "Disallow: /utopia/staff/" in c.get("/utopia/robots.txt").text
+            api = c.get("/utopia/api/v1/instruments", params={"limit": 1}).json()
+            assert api["next"].startswith("http://testserver/utopia/api/v1/")
+            css = c.get("/utopia/static/portal.css")
+            assert css.status_code == 200
+    finally:
+        monkeypatch.delenv("PORTAL_BASE_PATH")
+        monkeypatch.setenv("PORTAL_SITE_URL", "http://testserver")
+        reset_settings_cache()

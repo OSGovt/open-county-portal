@@ -255,3 +255,21 @@ def test_stay_signed_in_and_idle_signout(client, monkeypatch):
     assert client.post("/staff/ping").json() == {"ok": False}
     r = client.get("/staff/", follow_redirects=False)
     assert r.status_code == 303 and "/staff/login" in r.headers["location"]
+
+
+def test_platform_helpers(monkeypatch):
+    from portal import scheduler
+    from portal.settings import _db_url
+    assert _db_url("postgres://u:p@h:5432/d") == "postgresql+psycopg://u:p@h:5432/d"
+    assert _db_url("postgresql://u@h/d") == "postgresql+psycopg://u@h/d"
+    assert _db_url("postgresql+psycopg://u@h/d") == "postgresql+psycopg://u@h/d"
+    import datetime as dt
+    now = dt.datetime(2026, 10, 14, 9, 0, tzinfo=dt.timezone.utc)
+    assert scheduler._seconds_until_next_run(now) == (23 * 60 + 30) * 60
+    assert scheduler.run_once() is True  # takes and releases the lock
+
+
+def test_bootstrap_does_nothing_without_settings(monkeypatch):
+    from portal import cli
+    monkeypatch.delenv("PORTAL_BOOTSTRAP_NAME", raising=False)
+    assert cli.main(["bootstrap"]) == 0

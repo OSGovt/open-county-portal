@@ -135,17 +135,37 @@ def _demo_page(title: str, lines: list[str]) -> bytes:
     return buf.getvalue()
 
 
+DEMO_BANNER = {"enabled": True, "title": "Demonstration site",
+               "body": "This county and every record on this site are fictional, generated to show what Open County "
+                       "Portal can do. Nothing here is a real person, property, bill or law.",
+               "link_text": "Get the free software", "link_url": "/source"}
+
+
 def cmd_demo(a) -> int:
     settings = get_settings()
+    if getattr(a, "scale", None) and not a.remove:
+        from .demo.generator import generate
+        import time
+        started = time.time()
+        generate(scale=a.scale, seed=a.seed, start_year=a.start_year, log=say)
+        if a.banner:
+            with tx() as conn:
+                config_store.put(conn, "alert", DEMO_BANNER, actor="demo", note="Demonstration banner")
+        say(f"Demonstration county loaded in {time.time() - started:.0f} seconds.")
+        say("Remove it with: countyctl app demo --remove")
+        return 0
     with tx() as conn:
         if a.remove:
-            batch = conn.execute(select(import_batches.c.id).where(import_batches.c.source == DEMO_BATCH_SOURCE)).scalar()
-            if batch:
+            for batch in conn.execute(select(import_batches.c.id).where(import_batches.c.source == DEMO_BATCH_SOURCE,
+                                                                        import_batches.c.status != "undone")).scalars().all():
                 conn.execute(delete(instruments).where(instruments.c.import_batch == batch))
                 conn.execute(delete(receivables).where(receivables.c.import_batch == batch))
                 conn.execute(import_batches.update().where(import_batches.c.id == batch).values(status="undone"))
             conn.execute(delete(meetings).where(meetings.c.title.like("SAMPLE:%")))
             conn.execute(delete(postings).where(postings.c.title.like("SAMPLE:%")))
+            alert = config_store.get(conn, "alert")
+            if alert.get("title") == DEMO_BANNER["title"]:
+                config_store.put(conn, "alert", {**alert, "enabled": False}, actor="demo", note="Demonstration removed")
             audit(conn, "cli", "demo.remove")
             say("Sample data removed.")
             return 0
@@ -216,6 +236,34 @@ def cmd_demo(a) -> int:
 
 
 # ---- maintenance -----------------------------------------------------------------
+
+def cmd_bootstrap(a) -> int:
+    """First start on a hosting platform with no shell: set up the site, and optionally a
+    demonstration county, from PORTAL_BOOTSTRAP_* settings. Does nothing once done."""
+    import os
+    env = os.environ.get
+    if not env("PORTAL_BOOTSTRAP_NAME"):
+        return 0
+    with get_engine().connect() as conn:
+        has_users = conn.execute(select(func.count()).select_from(users)).scalar_one() > 0
+    if not has_users:
+        args = argparse.Namespace(name=env("PORTAL_BOOTSTRAP_NAME"), type=env("PORTAL_BOOTSTRAP_TYPE", "county"),
+                                  state=env("PORTAL_BOOTSTRAP_STATE", "_template"),
+                                  state_name=env("PORTAL_BOOTSTRAP_STATE_NAME"),
+                                  admin_email=env("PORTAL_BOOTSTRAP_ADMIN_EMAIL"),
+                                  admin_name=env("PORTAL_BOOTSTRAP_ADMIN_NAME", "Administrator"))
+        cmd_setup(args)
+    scale = int(env("PORTAL_BOOTSTRAP_DEMO_SCALE", "0") or 0)
+    if scale:
+        with get_engine().connect() as conn:
+            loaded = conn.execute(select(import_batches.c.id).where(import_batches.c.source == DEMO_BATCH_SOURCE,
+                                                                    import_batches.c.status != "undone")).first()
+        if not loaded:
+            cmd_demo(argparse.Namespace(remove=False, scale=scale, seed=int(env("PORTAL_BOOTSTRAP_DEMO_SEED", "7")),
+                                        start_year=1985, banner=True))
+            cmd_export_bulk(a)
+    return 0
+
 
 def cmd_export_bulk(a) -> int:
     from .bulk import export
@@ -487,9 +535,16 @@ def main(argv: list[str] | None = None) -> int:
 
     d = sub.add_parser("demo", help="Load (or --remove) clearly labeled sample data for training.")
     d.add_argument("--remove", action="store_true")
+    d.add_argument("--scale", type=int, help="Generate a whole fictional county with this many documents, e.g. 200000")
+    d.add_argument("--seed", type=int, default=7, help="Same seed, same county (default 7)")
+    d.add_argument("--start-year", type=int, default=1985, help="Year the records begin (default 1985)")
+    d.add_argument("--no-banner", dest="banner", action="store_false",
+                   help="Don't show the 'Demonstration site' banner (shown by default with --scale)")
     d.set_defaults(fn=cmd_demo)
 
     sub.add_parser("export-bulk", help="Write the daily bulk data files now.").set_defaults(fn=cmd_export_bulk)
+    sub.add_parser("bootstrap", help="First-start setup from PORTAL_BOOTSTRAP_* settings (hosting platforms).") \
+        .set_defaults(fn=cmd_bootstrap)
     sub.add_parser("postings-check", help="Report required postings that are missing or late.").set_defaults(fn=cmd_postings_check)
     o = sub.add_parser("ocr", help="Read text from page images that don't have it yet.")
     o.add_argument("--limit", type=int, default=5000)
