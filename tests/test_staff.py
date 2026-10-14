@@ -273,3 +273,29 @@ def test_bootstrap_does_nothing_without_settings(monkeypatch):
     from portal import cli
     monkeypatch.delenv("PORTAL_BOOTSTRAP_NAME", raising=False)
     assert cli.main(["bootstrap"]) == 0
+
+
+def test_demo_mode_shared_staff_account(client, monkeypatch):
+    import re as _re
+
+    from portal import auth, cli
+    monkeypatch.setenv("PORTAL_DEMO_MODE", "1")
+    assert cli.main(["demo-staff"]) == 0
+    page = client.get("/staff/login").text
+    assert auth.DEMO_STAFF_EMAIL in page and auth.DEMO_STAFF_PASSWORD in page
+    token = csrf(client, "/staff/login")
+    for _ in range(6):  # wrong passwords never lock the shared account
+        client.post("/staff/login", data={"_csrf": token, "email": auth.DEMO_STAFF_EMAIL, "password": "wrong"})
+    r = client.post("/staff/login", data={"_csrf": token, "email": auth.DEMO_STAFF_EMAIL,
+                                          "password": auth.DEMO_STAFF_PASSWORD}, follow_redirects=True)
+    code = _re.search(r"the current code is <strong>(\d{6})</strong>", r.text).group(1)
+    token = csrf(client, "/staff/mfa")
+    r = client.post("/staff/mfa", data={"_csrf": token, "code": code}, follow_redirects=True)
+    assert r.status_code == 200 and "/staff/login" not in str(r.url)
+    assert client.get("/staff/counter").status_code == 200
+    assert client.get("/staff/settings/users").status_code == 403  # not an administrator
+    monkeypatch.delenv("PORTAL_DEMO_MODE")
+    assert auth.DEMO_STAFF_PASSWORD not in client.get("/staff/login").text
+    with tx() as conn:
+        from portal.db import users
+        conn.execute(users.update().where(users.c.email == auth.DEMO_STAFF_EMAIL).values(active=False))

@@ -5,3 +5,6 @@ __pycache__
 conformance/node_modules
 conformance/reports
 .pytest_cache
+deploy/cloudflare/node_modules
+deploy/cloudflare/.wrangler
+deploy/local/.env

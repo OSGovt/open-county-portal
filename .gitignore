@@ -5,3 +5,6 @@ __pycache__/
 .install-answers
 /conformance/reports/
 /conformance/node_modules/
+deploy/cloudflare/node_modules/
+deploy/cloudflare/.wrangler/
+deploy/local/.env

@@ -137,7 +137,8 @@ def _demo_page(title: str, lines: list[str]) -> bytes:
 
 DEMO_BANNER = {"enabled": True, "title": "Demonstration site",
                "body": "This county and every record on this site are fictional, generated to show what Open County "
-                       "Portal can do. Nothing here is a real person, property, bill or law.",
+                       "Portal can do. Nothing here is a real person, property, bill or law. Please don't enter "
+                       "real personal information in any form.",
                "link_text": "Get the free software", "link_url": "/source"}
 
 
@@ -148,9 +149,27 @@ def cmd_demo(a) -> int:
         import time
         started = time.time()
         generate(scale=a.scale, seed=a.seed, start_year=a.start_year, log=say)
-        if a.banner:
-            with tx() as conn:
+        with tx() as conn:
+            if a.banner:
                 config_store.put(conn, "alert", DEMO_BANNER, actor="demo", note="Demonstration banner")
+            # Fill in the fictional county's contact details where nothing is set yet.
+            # 555-01xx numbers and .example addresses are reserved for fiction and examples.
+            site = config_store.get(conn, "site")
+            for k, v in {"address": "1 Harmony Square\nSerenity, Nirvana 00001", "phone": "(555) 010-0100",
+                         "email": "info@utopiacounty.example", "population": 48000, "timezone": "America/Chicago",
+                         "accessibility_contact": "Accessibility coordinator, (555) 010-0123, "
+                                                  "access@utopiacounty.example (fictional)"}.items():
+                if not site.get(k):
+                    site[k] = v
+            config_store.put(conn, "site", site, actor="demo", note="Demonstration county details")
+            od = config_store.get(conn, "open_data")
+            for k, v in {"contact_name": "Utopia County open data (fictional)",
+                         "contact_email": "opendata@utopiacounty.example",
+                         "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+                         "data_terms": "Fictional demonstration data, free to use for any purpose."}.items():
+                if not od.get(k):
+                    od[k] = v
+            config_store.put(conn, "open_data", od, actor="demo", note="Demonstration open data details")
         say(f"Demonstration county loaded in {time.time() - started:.0f} seconds.")
         say("Remove it with: countyctl app demo --remove")
         return 0
@@ -237,6 +256,18 @@ def cmd_demo(a) -> int:
 
 # ---- maintenance -----------------------------------------------------------------
 
+def cmd_demo_staff(a) -> int:
+    """Create or reset the shared staff account for a public demonstration site."""
+    from .db import offices
+    with tx() as conn:
+        office_slugs = list(conn.execute(select(offices.c.slug)).scalars())
+        auth.ensure_demo_account(conn, office_slugs)
+        audit(conn, "cli", "user.demo_account")
+    say(f"Demonstration staff account ready: {auth.DEMO_STAFF_EMAIL} / {auth.DEMO_STAFF_PASSWORD}")
+    say("Its details are shown on the sign-in page only when PORTAL_DEMO_MODE=1.")
+    return 0
+
+
 def cmd_bootstrap(a) -> int:
     """First start on a hosting platform with no shell: set up the site, and optionally a
     demonstration county, from PORTAL_BOOTSTRAP_* settings. Does nothing once done."""
@@ -247,6 +278,8 @@ def cmd_bootstrap(a) -> int:
     with get_engine().connect() as conn:
         has_users = conn.execute(select(func.count()).select_from(users)).scalar_one() > 0
     if not has_users:
+        if not env("PORTAL_BOOTSTRAP_ADMIN_EMAIL"):
+            say("PORTAL_BOOTSTRAP_ADMIN_EMAIL isn't set, so no administrator account will be created.")
         args = argparse.Namespace(name=env("PORTAL_BOOTSTRAP_NAME"), type=env("PORTAL_BOOTSTRAP_TYPE", "county"),
                                   state=env("PORTAL_BOOTSTRAP_STATE", "_template"),
                                   state_name=env("PORTAL_BOOTSTRAP_STATE_NAME"),
@@ -543,6 +576,8 @@ def main(argv: list[str] | None = None) -> int:
     d.set_defaults(fn=cmd_demo)
 
     sub.add_parser("export-bulk", help="Write the daily bulk data files now.").set_defaults(fn=cmd_export_bulk)
+    sub.add_parser("demo-staff", help="Create the shared staff account for a public demonstration site.") \
+        .set_defaults(fn=cmd_demo_staff)
     sub.add_parser("bootstrap", help="First-start setup from PORTAL_BOOTSTRAP_* settings (hosting platforms).") \
         .set_defaults(fn=cmd_bootstrap)
     sub.add_parser("postings-check", help="Report required postings that are missing or late.").set_defaults(fn=cmd_postings_check)

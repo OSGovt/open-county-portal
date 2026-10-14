@@ -1,0 +1,51 @@
+# Try Open County Portal on your own computer (Docker required).
+# Started by deploy/local/start.sh; opens at http://localhost:8080
+# Nothing here is reachable from other computers, and it's all removable with:
+#   docker compose -f deploy/local/docker-compose.yml down -v
+name: county-portal-local
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: portal
+      POSTGRES_USER: portal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run deploy/local/start.sh}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portal -d portal"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build: ../..
+    image: county-portal:local
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8000"
+    environment:
+      PORTAL_DATABASE_URL: postgresql+psycopg://portal:${POSTGRES_PASSWORD}@db:5432/portal
+      PORTAL_SECRET_KEY: ${PORTAL_SECRET_KEY:?run deploy/local/start.sh}
+      PORTAL_SITE_URL: http://localhost:8080
+      PORTAL_SECURE_COOKIES: "false"
+      PORTAL_WORKERS: "2"
+      PORTAL_NIGHTLY_IN_APP: "true"
+      PORTAL_BOOTSTRAP_NAME: ${DEMO_NAME:-Utopia County}
+      PORTAL_BOOTSTRAP_TYPE: county
+      PORTAL_BOOTSTRAP_STATE: ${DEMO_STATE:-zn}
+      PORTAL_BOOTSTRAP_STATE_NAME: ${DEMO_STATE_NAME:-Nirvana}
+      PORTAL_BOOTSTRAP_ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      PORTAL_BOOTSTRAP_ADMIN_NAME: Demo Administrator
+      PORTAL_BOOTSTRAP_DEMO_SCALE: ${DEMO_SCALE:-200000}
+    volumes:
+      - portaldata:/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  portaldata:

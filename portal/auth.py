@@ -94,6 +94,40 @@ def create_user(conn: Connection, email: str, name: str, roles: list[str], offic
     return temp
 
 
+# Public demonstration sites only (PORTAL_DEMO_MODE=1): one shared staff account whose
+# sign-in details, including the current six-digit code, are shown on the sign-in pages.
+DEMO_STAFF_EMAIL = "demo@utopiacounty.example"
+DEMO_STAFF_PASSWORD = "utopia-demo-staff"
+DEMO_STAFF_ROLES = ["content", "records", "cashier", "supervisor", "finance", "pia", "applications"]
+
+
+def demo_mode() -> bool:
+    import os
+    return os.environ.get("PORTAL_DEMO_MODE", "").lower() in ("1", "true", "yes")
+
+
+def is_demo_account(email: str | None) -> bool:
+    return demo_mode() and (email or "").strip().lower() == DEMO_STAFF_EMAIL
+
+
+def demo_code(conn: Connection) -> str | None:
+    if not demo_mode():
+        return None
+    secret = conn.execute(select(users.c.totp_secret).where(users.c.email == DEMO_STAFF_EMAIL)).scalar()
+    return pyotp.TOTP(secret).now() if secret else None
+
+
+def ensure_demo_account(conn: Connection, offices: list[str]) -> None:
+    """Create (or reset) the shared demonstration staff account."""
+    values = dict(name="Demo Staff", password_hash=hash_password(DEMO_STAFF_PASSWORD), roles=DEMO_STAFF_ROLES,
+                  offices=offices, must_change_password=False, mfa_enrolled=True, active=True, failed_logins=0,
+                  locked_until=None)
+    if conn.execute(select(users.c.id).where(users.c.email == DEMO_STAFF_EMAIL)).first():
+        conn.execute(users.update().where(users.c.email == DEMO_STAFF_EMAIL).values(**values))
+    else:
+        conn.execute(users.insert().values(email=DEMO_STAFF_EMAIL, totp_secret=new_totp_secret(), **values))
+
+
 def attempt_login(conn: Connection, email: str, password: str, ip: str) -> tuple[dict | None, str | None]:
     row = conn.execute(select(users).where(users.c.email == (email or "").strip().lower())).mappings().first()
     generic = "That email and password don't match an active account."
@@ -104,6 +138,8 @@ def attempt_login(conn: Connection, email: str, password: str, ip: str) -> tuple
         minutes = int((row["locked_until"] - now).total_seconds() // 60) + 1
         return None, f"This account is locked after too many attempts. Try again in {minutes} minutes, or ask an administrator."
     if not verify_password(row["password_hash"], password):
+        if is_demo_account(row["email"]):  # never lock the shared demo account
+            return None, generic
         fails = row["failed_logins"] + 1
         values = {"failed_logins": fails}
         if fails >= LOCK_AFTER:

@@ -46,6 +46,10 @@ Work through these in order. Each page ends with how to check it worked.
 | 11 | [Register with Data.gov](data-gov.md) | 20 minutes |
 | 12 | [Go-live checklist and cutover](cutover.md) | 1 day |
 
+Want to see it first? [Demonstration site](hosted-demo.md) runs a fictional
+county with 200,000 records on your own computer, or on Cloudflare with no
+server to maintain.
+
 After launch:
 
 - [Everyday operations with countyctl](countyctl.md)

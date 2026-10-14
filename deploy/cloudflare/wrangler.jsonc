@@ -1,0 +1,34 @@
+// Utopia County demonstration on Cloudflare Workers + Containers (Workers Paid plan).
+// Deploy from this folder with: npx wrangler deploy   (Docker must be running.)
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "utopia-county",
+  "main": "worker.js",
+  "compatibility_date": "2025-10-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "vars": {
+    // The address people use. Change it here if you use a different domain.
+    "SITE_URL": "https://utopia.osgovt.com",
+    // standard-1 = 1/2 vCPU, 4 GiB memory, 8 GB disk.
+    "INSTANCE_TYPE": "standard-1"
+  },
+  "routes": [
+    { "pattern": "utopia.osgovt.com", "custom_domain": true }
+  ],
+  "containers": [
+    {
+      "class_name": "UtopiaPortal",
+      "scheduling_policy": "durable_object",
+      "images": {
+        "base": { "dockerfile": "./Dockerfile", "build_context": "../.." }
+      }
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "class_name": "UtopiaPortal", "name": "PORTAL" }]
+  },
+  "exports": {
+    "UtopiaPortal": { "type": "durable-object", "storage": "sqlite" }
+  }
+}

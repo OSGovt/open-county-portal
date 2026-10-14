@@ -1,0 +1,225 @@
+# Demonstration site: Utopia County, Nirvana
+
+A public demonstration of Open County Portal: a fictional county with 200,000
+generated recorded documents, bills, meetings and notices. Nirvana's laws,
+fees and citations are invented too (state pack `zn`), so the demo never
+presents real law, and every page image says SAMPLE.
+
+- **Part 1** runs it on your own computer to look around. Nothing is public.
+- **Part 2** puts it on the internet at `https://utopia.osgovt.com` on
+  Cloudflare, using the Workers Paid plan you already have. There's no server
+  to maintain, and nothing runs on your computer once it's deployed.
+
+## Part 1: On your own computer
+
+You need Docker. On Windows that means WSL (Ubuntu) and Docker Desktop.
+
+### 1. Check what's installed
+
+In a Windows Terminal (PowerShell) window:
+
+```
+wsl -l -v; docker version --format "{{.Server.Version}}"
+```
+
+- If Ubuntu is listed and a Docker version number prints, skip to step 4.
+- If `wsl` isn't found or Ubuntu isn't listed, do step 2.
+- If Docker isn't found, do step 3.
+
+### 2. Install Ubuntu on WSL
+
+In PowerShell **opened as Administrator**:
+
+```
+wsl --install -d Ubuntu-24.04
+```
+
+Restart when asked. Ubuntu opens and asks for a username and password; choose
+any.
+
+### 3. Install Docker Desktop
+
+Download and install Docker Desktop for Windows from docker.com. Open it, go
+to **Settings > Resources > WSL integration**, turn on **Ubuntu-24.04**, and
+choose **Apply & restart**.
+
+### 4. Get the portal into Ubuntu
+
+Open **Ubuntu** from the Start menu. Windows drives appear under `/mnt`:
+`D:\Downloads` is `/mnt/d/Downloads`. If the zip is somewhere else, change
+that part of the path.
+
+```
+sudo apt-get update && sudo apt-get install -y unzip && unzip -q /mnt/d/Downloads/open-county-portal-1.0.0.zip -d ~ && cd ~/open-county-portal && ls
+```
+
+You should see `README.md`, `deploy`, `docs` and other folders.
+
+### 5. Start it
+
+```
+cd ~/open-county-portal && ./deploy/local/start.sh
+```
+
+The first run builds the portal (5 to 10 minutes) and then generates Utopia
+County (about a minute). At the end it prints:
+
+```
+Open County Portal is running: http://localhost:8080
+Staff console:                 http://localhost:8080/staff
+  Email:              admin@example.com
+  Temporary password: Abcde-Fghij-Klmno-Pqrst
+```
+
+### 6. Look around
+
+Open `http://localhost:8080` in your browser. Try a records search for `smith`,
+open a document, view its pages and download the PDF, look up a property tax
+bill, and open the Open data page and `http://localhost:8080/api/v1/instruments?name=garcia`.
+
+Sign in to `http://localhost:8080/staff` with the email and temporary
+password. You'll set up a phone code and your own password.
+
+### 7. Stop or erase it
+
+Stop (keeps everything):
+
+```
+cd ~/open-county-portal && docker compose -f deploy/local/docker-compose.yml stop
+```
+
+Erase everything:
+
+```
+cd ~/open-county-portal && docker compose -f deploy/local/docker-compose.yml down -v && rm deploy/local/.env
+```
+
+## Part 2: On the internet with Cloudflare
+
+### How it works
+
+Cloudflare Containers runs the whole demonstration in one container: the
+portal and its own small database, with Utopia County already loaded. A
+Cloudflare Worker in front sends every visitor to that one container.
+
+- **When nobody visits for 20 minutes, the container goes to sleep.** It
+  costs nothing while asleep. The next visitor wakes it in seconds (the first
+  visit after a deploy can take a minute or two).
+- **Every wake-up is a fresh copy.** Anything visitors changed (test payments,
+  form submissions, staff edits) is gone, so the demo always looks right and
+  nobody can vandalize it for long.
+- **Visitors can try the staff console.** The sign-in page shows a shared
+  demonstration account and its six-digit code. That account can do
+  everything except administration (no user, theme or settings changes).
+- **The container can't reach the internet.** Nothing in it can send email or
+  contact any other site.
+
+**Cost.** The Workers Paid plan includes 25 GiB-hours of container memory, 375
+vCPU-minutes and 200 GB-hours of disk each month (Cloudflare's pricing page,
+October 2026). The demo uses the `standard-1` size (half a CPU, 4 GiB memory),
+so about the first 6 awake hours each month are included; after that it's
+roughly 4 cents an hour while awake. If it's awake 2 hours a day, expect about
+$2 a month on top of the $5 plan. The `basic` size (a quarter CPU, 1 GiB) costs
+a quarter as much; it should fit but I haven't tested it, so it isn't the
+default.
+
+You need: the Desktop with Docker Desktop and Ubuntu from Part 1 (only to
+build and send the demo to Cloudflare), and your Cloudflare login.
+
+### 1. Register osgovt.com and add it to Cloudflare
+
+Register `osgovt.com` at GoDaddy and add it to your Cloudflare account the same
+way as your other domains (nameservers pointed at Cloudflare). Wait until
+Cloudflare shows the domain as **Active**. The demo will live at
+`utopia.osgovt.com`; the bare `osgovt.com` stays free for a project home page.
+
+### 2. Install Node.js 22 in Ubuntu
+
+Cloudflare's deploy tool needs Node.js 22 or newer; Ubuntu's own is older. In
+the Ubuntu window:
+
+```
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs && node --version
+```
+
+The last line should print `v22` or higher.
+
+### 3. Install the deploy tool
+
+```
+cd ~/open-county-portal/deploy/cloudflare && npm install
+```
+
+### 4. Sign in to Cloudflare
+
+```
+cd ~/open-county-portal/deploy/cloudflare && npx wrangler login
+```
+
+A browser window asks you to allow access; choose **Allow**. (If no browser
+opens, copy the address it prints into your browser.)
+
+### 5. Deploy
+
+Make sure Docker Desktop is running, then:
+
+```
+cd ~/open-county-portal/deploy/cloudflare && npx wrangler deploy
+```
+
+It builds the demonstration (the portal, the database, and Utopia County's
+200,000 records; about 5 to 10 minutes the first time), uploads it to
+Cloudflare, and connects `utopia.osgovt.com`. It ends by printing the
+addresses it's live at.
+
+If it says `utopia.osgovt.com` can't be used, the domain isn't active in this
+Cloudflare account yet (step 1).
+
+### 6. Open it
+
+Go to `https://utopia.osgovt.com`. The first visit wakes the container: you may
+see "Utopia County is starting" for a minute, and the page retries on its own.
+
+Try a records search, a document's pages and its free PDF, a property tax bill
+and the test payment (card `4242 4242 4242 4242`), the open data page and
+`https://utopia.osgovt.com/api/v1/instruments?name=garcia`, and the staff
+console at `https://utopia.osgovt.com/staff`.
+
+### 7. Check it
+
+From the `conformance` folder of your copy (setup in
+[Accessibility testing](accessibility-testing.md#part-1-automated-check)):
+
+```
+.venv/bin/python run.py --url https://utopia.osgovt.com
+```
+
+## Running it afterward
+
+- **Change something and redeploy:** run step 5 again. Visitors see the new
+  version from their next visit.
+- **Watch it:** Cloudflare dashboard > **Workers & Pages** > `utopia-county`
+  shows requests and logs; **Containers** shows when it's awake.
+- **Take it down:** `npx wrangler delete` in `deploy/cloudflare` removes the
+  Worker; delete the container image under **Containers** in the dashboard.
+- **A different address:** change `SITE_URL` and the `routes` pattern in
+  `deploy/cloudflare/wrangler.jsonc`, then redeploy.
+- **A smaller, cheaper size:** change `INSTANCE_TYPE` to `basic` in the same
+  file and redeploy. If pages get slow or the site restarts under load, change
+  it back.
+
+## Other ways to host it
+
+- **Render** (`render.yaml` in the project): fully managed, always on, with a
+  separate managed database; about $46 a month in October 2026. Suits a real
+  government's installation more than a demo.
+- **Any Ubuntu server** with the regular [installer](install.md), then
+  `sudo countyctl app demo --scale 200000`.
+
+## Using these pieces for a real government
+
+The Cloudflare setup above is for demonstrations only: its database lives
+inside the container and is thrown away when the container sleeps. A real
+installation needs a permanent database and storage: use the
+[installer](install.md) on a server, or Render with a disk added (see the
+comment in `render.yaml`), and follow the [administrator guide](README.md).

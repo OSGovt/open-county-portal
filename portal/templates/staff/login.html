@@ -3,6 +3,8 @@
 {% block content %}
 <div style="max-width: 28rem">
 <h1>Staff sign in</h1>
+{% if demo %}<div class="notice" style="margin-bottom: 1rem"><h2 style="font-size: 1.1rem; margin-top: 0">Try the staff console</h2>
+<p style="margin: 0">This is a demonstration. Sign in with email <strong>{{ demo_email }}</strong> and password <strong>{{ demo_password }}</strong>. The next page shows the six-digit code. Changes you make are erased when the site resets.</p></div>{% endif %}
 {% if error %}<div class="error-summary" role="alert" tabindex="-1" autofocus><h2>There is a problem</h2><p style="margin: 0">{{ error }}</p></div>{% endif %}
 <form method="post" action="/staff/login" class="card" novalidate>
   <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="next" value="{{ next }}">

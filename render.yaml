@@ -1,0 +1,55 @@
+# Render Blueprint: run Open County Portal on Render (managed hosting).
+# Render builds the Dockerfile, runs a managed PostgreSQL database, and keeps
+# both patched and backed up. Costs money (about $46 a month in October 2026).
+# For a free demonstration, see deploy/cloudflare and docs/admin/hosted-demo.md.
+#
+# As written this creates the Utopia County demonstration: a fictional county
+# with 200,000 generated records. For a real government, remove the
+# PORTAL_BOOTSTRAP_DEMO_SCALE line and set the name, type and state to yours.
+services:
+  - type: web
+    name: open-county-portal
+    runtime: docker
+    region: ohio
+    plan: 1c-2g
+    healthCheckPath: /healthz
+    # No disk for the demonstration: files the portal writes (open data files,
+    # page cache, form uploads) are rebuilt or discarded on each deploy, and
+    # deploys have no downtime. For a real government add a disk, e.g.
+    #   disk: {name: portal-data, mountPath: /data, sizeGB: 10}
+    envVars:
+      - key: PORTAL_DATABASE_URL
+        fromDatabase:
+          name: portal-db
+          property: connectionString
+      - key: PORTAL_SECRET_KEY
+        generateValue: true
+      - key: PORTAL_DATA_DIR
+        value: /data
+      - key: PORTAL_WORKERS
+        value: "2"
+      - key: PORTAL_NIGHTLY_IN_APP
+        value: "true"
+      - key: PORTAL_SITE_URL          # e.g. https://utopia.osgovt.com
+        sync: false
+      - key: PORTAL_BOOTSTRAP_ADMIN_EMAIL   # your email; the first sign-in is printed in the Logs
+        sync: false
+      - key: PORTAL_BOOTSTRAP_NAME
+        value: Utopia County
+      - key: PORTAL_BOOTSTRAP_TYPE
+        value: county
+      - key: PORTAL_BOOTSTRAP_STATE
+        value: zn
+      - key: PORTAL_BOOTSTRAP_STATE_NAME
+        value: Nirvana
+      - key: PORTAL_BOOTSTRAP_ADMIN_NAME
+        value: Demo Administrator
+      - key: PORTAL_BOOTSTRAP_DEMO_SCALE
+        value: "200000"
+
+databases:
+  - name: portal-db
+    region: ohio
+    plan: 0.5c-1g
+    postgresMajorVersion: "16"
+    diskSizeGB: 5

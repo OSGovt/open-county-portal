@@ -20,7 +20,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends postgresql-client-16 tesseract-ocr tesseract-ocr-eng poppler-utils fonts-dejavu-core \
  && apt-get purge -y gnupg && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
-RUN useradd --create-home --uid 1000 portal
+RUN useradd --create-home --uid 1000 portal && install -d -o portal -g portal /data
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt

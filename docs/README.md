@@ -27,6 +27,9 @@ Pick the guide for your role.
 11. [Register with Data.gov](admin/data-gov.md)
 12. [Go-live checklist and cutover](admin/cutover.md)
 
+Demonstration site (Utopia County, on your computer or on Cloudflare):
+[Demonstration site](admin/hosted-demo.md)
+
 Reference: [countyctl](admin/countyctl.md) · [Updates](admin/updates.md) ·
 [Troubleshooting](admin/troubleshooting.md) · [Server security](admin/security.md) ·
 [All settings](admin/settings.md)

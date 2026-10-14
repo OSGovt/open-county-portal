@@ -26,7 +26,9 @@ def _safe_next(target: str | None) -> str:
 @router.get("/login")
 def login_page(request: Request, next: str = "/staff"):
     with get_engine().connect() as conn:
-        return render(request, "staff/login.html", conn, page_title="Staff sign in", next=_safe_next(next), error=None)
+        return render(request, "staff/login.html", conn, page_title="Staff sign in", next=_safe_next(next), error=None,
+                      demo=auth.demo_mode() and auth.demo_code(conn) is not None,
+                      demo_email=auth.DEMO_STAFF_EMAIL, demo_password=auth.DEMO_STAFF_PASSWORD)
 
 
 @router.post("/login", dependencies=[Depends(verify_csrf)])
@@ -57,9 +59,11 @@ def _pending(conn, request) -> dict | None:
 @router.get("/mfa")
 def mfa_page(request: Request):
     with get_engine().connect() as conn:
-        if _pending(conn, request) is None:
+        pending = _pending(conn, request)
+        if pending is None:
             return RedirectResponse("/staff/login", status_code=303)
-        return render(request, "staff/mfa.html", conn, page_title="Enter your code", error=None)
+        code = auth.demo_code(conn) if auth.is_demo_account(pending["email"]) else None
+        return render(request, "staff/mfa.html", conn, page_title="Enter your code", error=None, demo_code=code)
 
 
 def _finish_login(request: Request, conn, user: dict) -> RedirectResponse:
@@ -153,6 +157,9 @@ async def password_submit(request: Request):
         if user is None:
             return RedirectResponse("/staff/login", status_code=303)
         errors = {}
+        if auth.is_demo_account(user["email"]):
+            flash(request, "The shared demonstration account's password can't be changed.", "warning")
+            return RedirectResponse("/staff", status_code=303)
         if not auth.verify_password(user["password_hash"], current):
             errors["current"] = "Your current password isn't right."
         problem = auth.password_problem(new)

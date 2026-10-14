@@ -1,0 +1,13 @@
+{
+  "name": "utopia-county-demo",
+  "private": true,
+  "description": "Open County Portal demonstration on Cloudflare Workers + Containers",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.141.0"
+  }
+}

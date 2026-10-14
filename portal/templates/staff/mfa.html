@@ -4,6 +4,7 @@
 <div style="max-width: 28rem">
 <h1>Enter your code</h1>
 <p>Open your authenticator app and enter the six-digit code for this portal.</p>
+{% if demo_code %}<p class="notice">Demonstration account: the current code is <strong>{{ demo_code }}</strong>. A real account's code comes only from the person's own phone.</p>{% endif %}
 {% if error %}<div class="error-summary" role="alert" tabindex="-1" autofocus><h2>There is a problem</h2><a href="#code">{{ error }}</a></div>{% endif %}
 <form method="post" action="/staff/mfa" class="card" novalidate>
   <input type="hidden" name="_csrf" value="{{ csrf }}">

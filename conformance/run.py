@@ -319,8 +319,12 @@ def check_api(rep: Report, client: httpx.Client, base: str) -> None:
                 "; ".join(problems), where)
         # Paging: follow one 'next' link if there is one.
         if isinstance(body, dict) and body.get("next"):
-            nxt = client.get(body["next"])
-            rep.add(g, "PASS" if nxt.status_code == 200 else "FAIL", "Next-page link works", body["next"], where)
+            if not same_origin(base, body["next"]):
+                rep.add(g, "WARN", "Next-page link points to the address being tested",
+                        f"It points to {body['next']}; check PORTAL_SITE_URL if this isn't the public address.", where)
+            else:
+                nxt = client.get(body["next"])
+                rep.add(g, "PASS" if nxt.status_code == 200 else "FAIL", "Next-page link works", body["next"], where)
 
 
 def check_bulk(rep: Report, client: httpx.Client, base: str) -> None:
@@ -344,6 +348,10 @@ def check_bulk(rep: Report, client: httpx.Client, base: str) -> None:
     else:
         rep.add(g, "PASS", "Bulk files are fresh", f"{age:.0f} hours old")
     for f in files:
+        if not same_origin(base, f["url"]):
+            rep.add(g, "WARN", "Bulk file link points to the address being tested",
+                    f"It points to {f['url']}; check PORTAL_SITE_URL if this isn't the public address.", f["name"])
+            continue
         resp = client.get(f["url"])
         digest = hashlib.sha256(resp.content).hexdigest()
         ok = resp.status_code == 200 and digest == f["sha256"] and len(resp.content) == f["bytes"]
@@ -390,6 +398,9 @@ def check_catalog(rep: Report, client: httpx.Client, base: str, check_links: boo
             link = dist.get("downloadURL") or dist.get("accessURL")
             if not link or not dist.get("mediaType"):
                 rep.add(g, "FAIL", "Each distribution has a URL and media type", json.dumps(dist)[:160], name)
+            elif check_links and not same_origin(base, link):
+                rep.add(g, "WARN", "Distribution link points to the address being tested",
+                        f"It points to {link}; check PORTAL_SITE_URL if this isn't the public address.", name)
             elif check_links:
                 resp = client.get(link)
                 rep.add(g, "PASS" if resp.status_code == 200 else "FAIL", "Distribution link works",

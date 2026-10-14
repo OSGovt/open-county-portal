@@ -38,7 +38,7 @@ jobs:
         run: npm ci
         working-directory: conformance
       - name: Check shell scripts
-        run: shellcheck -S warning deploy/install.sh deploy/countyctl
+        run: shellcheck -S warning deploy/install.sh deploy/countyctl deploy/local/start.sh deploy/cloudflare/entrypoint.sh
       - name: Validate state packs
         run: python -m portal.cli pack validate
         env:

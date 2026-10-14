@@ -60,6 +60,9 @@ Install on a fresh Ubuntu 24.04 server:
 sudo apt-get install -y git && sudo git clone --branch v1.0.0 https://github.com/OWNER/open-county-portal.git /opt/county-portal && cd /opt/county-portal && sudo ./deploy/install.sh
 ```
 
+Or try the fictional Utopia County with 200,000 generated records, on your
+own computer or on Cloudflare: [Demonstration site](docs/admin/hosted-demo.md).
+
 ## How it's built
 
 Python (FastAPI, server-rendered Jinja templates, SQLAlchemy Core),
