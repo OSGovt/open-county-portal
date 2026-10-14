@@ -47,6 +47,8 @@ def create_app() -> FastAPI:
                   description="Free, open API for public records and information published by this jurisdiction. "
                               "No key is required. Heavy users should download the daily bulk files at /api/v1/bulk.")
     limiter = RateLimiter()
+    from .auth import demo_mode
+    demo_mode_on = demo_mode()
     key_cache: dict = {"at": 0.0, "hashes": set()}
 
     def _key_ok(key: str) -> bool:
@@ -75,6 +77,8 @@ def create_app() -> FastAPI:
                                     status_code=429, headers={"Retry-After": "60"})
         response: Response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        if demo_mode_on:
+            response.headers.setdefault("X-Robots-Tag", "noindex, nofollow, noarchive")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         response.headers.setdefault("Permissions-Policy", "camera=(self), geolocation=(), microphone=()")
         if not path.startswith("/api/") and path not in ("/data.json", "/data-v1.1.json"):
@@ -120,6 +124,9 @@ def create_app() -> FastAPI:
     @app.get("/robots.txt", include_in_schema=False)
     def robots() -> PlainTextResponse:
         b = settings.base_path
+        from .auth import demo_mode
+        if demo_mode():  # fictional records must never show up in search engines or AI training sets
+            return PlainTextResponse("User-agent: *\nDisallow: /\n")
         return PlainTextResponse(f"User-agent: *\nDisallow: {b}/staff/\nDisallow: {b}/cart\nDisallow: {b}/checkout\n"
                                  f"Sitemap: {settings.site_url}/sitemap.xml\n")
 

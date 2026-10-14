@@ -193,3 +193,17 @@ def test_served_from_a_subfolder(monkeypatch):
         monkeypatch.delenv("PORTAL_BASE_PATH")
         monkeypatch.setenv("PORTAL_SITE_URL", "http://testserver")
         reset_settings_cache()
+
+
+def test_demo_mode_keeps_crawlers_out(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from portal.app import create_app
+    monkeypatch.setenv("PORTAL_DEMO_MODE", "1")
+    with TestClient(create_app()) as c:
+        assert c.get("/robots.txt").text == "User-agent: *\nDisallow: /\n"
+        assert "noindex" in c.get("/").headers["x-robots-tag"]
+    monkeypatch.delenv("PORTAL_DEMO_MODE")
+    with TestClient(create_app()) as c:
+        assert "Disallow: /staff/" in c.get("/robots.txt").text
+        assert "x-robots-tag" not in c.get("/").headers
