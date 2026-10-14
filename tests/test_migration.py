@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import io
+import re
 import threading
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -99,6 +100,31 @@ def test_bills_sync(tmp_path, capsys):
         demo = conn.execute(select(receivables.c.amount_due_cents).where(receivables.c.account == "R000456")).scalar_one()
     assert t1 == 125075
     assert demo == 0  # sync: accounts missing from the new roll are set to $0 due
+    # Undo puts the bills back exactly as before the load.
+    batch = int(re.search(r"Batch (\d+)\. Bills", capsys.readouterr().out).group(1))
+    assert cli.main(["migrate", "bills", "undo", "--batch", str(batch)]) == 0
+    with tx() as conn:
+        assert conn.execute(select(receivables.c.id).where(receivables.c.account == "T-1")).first() is None
+        assert conn.execute(select(receivables.c.amount_due_cents)
+                            .where(receivables.c.account == "R000456")).scalar_one() > 0
+
+
+def test_bill_sync_refuses_truncated_file(tmp_path):
+    with tx() as conn:
+        for i in range(30):
+            conn.execute(receivables.insert().values(kind="utility", account=f"U-{i}", office_slug="tax-office",
+                                                     name="SAMPLE", amount_due_cents=1000, allow_partial=True))
+    f = tmp_path / "utility.csv"
+    f.write_text("Account,Name,Balance\nU-1,SAMPLE,10.00\n")
+    out = tmp_path / "u.yaml"
+    assert cli.main(["migrate", "bills", "map", str(f), "--kind", "utility", "--office", "tax-office",
+                     "--out", str(out)]) == 0
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["migrate", "bills", "load", str(out)])
+    assert "Nothing was changed" in str(exc.value)
+    with tx() as conn:
+        assert conn.execute(select(receivables.c.amount_due_cents).where(receivables.c.account == "U-5")).scalar_one() == 1000
+        conn.execute(receivables.delete().where(receivables.c.kind == "utility"))
 
 
 def test_site_crawl_and_import(tmp_path, capsys):

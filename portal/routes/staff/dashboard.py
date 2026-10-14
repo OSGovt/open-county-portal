@@ -28,7 +28,7 @@ def dashboard(request: Request):
              count(select(func.count()).select_from(redaction_requests).where(redaction_requests.c.status == "received"))),
             ("Online orders awaiting payment at the office", "/staff/counter/orders", ("cashier",),
              count(select(func.count()).select_from(orders).where(orders.c.status == "pending", orders.c.processor == "manual"))),
-            ("Imports waiting for sign-off", "/staff/system/migrations", ("admin",),
+            ("Imports waiting for sign-off", "/staff/system/migrations", ("admin", "records"),
              count(select(func.count()).select_from(import_batches).where(import_batches.c.status == "loaded"))),
         ]
         queues = [q for q in queues if auth.has_role(user, *q[2])]

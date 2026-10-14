@@ -17,21 +17,21 @@
       <button class="btn" type="submit">Close drawer</button>
     </form>
   </section>
-  {% if can('supervisor') %}
-  <section class="side card">
-    <h2>Void a sale</h2>
-    <p class="small">Supervisors only. Return any cash to the customer.</p>
-    <form method="post" action="/staff/counter/void" novalidate>
-      <input type="hidden" name="_csrf" value="{{ csrf }}">
-      <div class="field"><label for="vnum">Order number</label><input type="text" id="vnum" name="number"></div>
-      <div class="field"><label for="vreason">Reason</label><input type="text" id="vreason" name="reason"></div>
-      <button class="btn danger" type="submit">Void sale</button>
-    </form>
-  </section>
-  {% endif %}
 </div>
 {% else %}
 <p>You don't have a drawer open. <a href="/staff/counter">Go to the counter</a>.</p>
+{% endif %}
+{% if can('supervisor') %}
+<section class="card" style="margin-top: 1.5rem; max-width: 36rem">
+  <h2>Void a sale</h2>
+  <p class="small">Supervisors only. Works for counter and online orders; card payments taken through a connected processor are refunded first. Return any cash to the customer.</p>
+  <form method="post" action="/staff/counter/void" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <div class="field"><label for="vnum">Order number</label><input type="text" id="vnum" name="number"></div>
+    <div class="field"><label for="vreason">Reason</label><input type="text" id="vreason" name="reason"></div>
+    <button class="btn danger" type="submit">Void sale</button>
+  </form>
+</section>
 {% endif %}
 <section style="margin-top: 1.5rem">
   <h2>Recently closed drawers</h2>

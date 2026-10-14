@@ -121,8 +121,9 @@ sudo countyctl app export-bulk
 ```
 
 7. **If you also want the bare domain** (`example-county.gov` without `www`)
-   to work, point it at the same server and add it on the old web server or
-   your DNS provider as a redirect to `https://www.example-county.gov`.
+   to work, set up a redirect from it to `https://www.example-county.gov`
+   with your DNS provider's redirect feature or on another web server. Don't
+   point it at the portal server: the portal serves only its own address.
 
 ## The way back (same day)
 

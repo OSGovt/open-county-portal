@@ -95,7 +95,8 @@ sudo countyctl backup --label before-big-import
 ```
 
 Staff with the administrator role can also start a backup from **System** in
-the staff console.
+the staff console. That backup isn't copied off-site until the next nightly
+run or the next `sudo countyctl backup`.
 
 ## See backups
 

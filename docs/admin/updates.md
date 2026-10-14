@@ -49,8 +49,10 @@ To install a particular version instead of the newest:
 sudo countyctl update v1.4.2
 ```
 
-**Without internet access from the server,** download the release `.tar.gz`
-from GitHub on another computer, copy it to the server, and run:
+**Without access to GitHub from the server,** download the release
+`.tar.gz` on another computer, copy it to the server, and run the command
+below. (Building still needs the other internet access listed in
+[Server size](sizing.md#network).)
 
 ```
 sudo countyctl update --from open-county-portal-1.4.2.tar.gz

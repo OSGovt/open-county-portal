@@ -8,8 +8,9 @@ This guide moves three things into the portal:
 3. **Pages and documents from your old website**
 
 Nothing is ever changed in the old systems or the export files. The portal
-only reads them. Every import is a numbered batch that can be undone as a
-whole, and a backup is taken before any undo.
+only reads them. Records and bill imports are numbered batches that can be
+undone as a whole; old web pages come in as unpublished drafts that go live
+only when staff publish them.
 
 You run the commands on the server. Staff review and sign off in the staff
 console.
@@ -20,23 +21,28 @@ Exports go in `/var/lib/county-portal/import` on the server. Inside the
 portal, that folder is called `/import`, so commands use paths that start
 with `/import/`.
 
-**From a Windows computer:** use WinSCP (free) to copy the export folder to
-`/var/lib/county-portal/import/` on the server.
+The import folder belongs to the administrator who ran the installer, so that
+account can copy files straight into it. Exports can be large: copy them
+directly into this folder, not to `/tmp` first, which is on the smaller system
+disk.
+
+**From a Windows computer:** use WinSCP (free), signed in as the account that
+ran the installer, to copy the export folder to
+`/var/lib/county-portal/import/`.
 
 **From a Linux or Mac computer:**
 
 ```
-rsync -a --progress records-export/ you@server:/tmp/records-export/
+rsync -a --progress records-export you@server:/var/lib/county-portal/import/
 ```
 
-then on the server:
+(Signed in as a different administrator? Add `--rsync-path="sudo rsync"`.)
+
+**From a USB drive plugged into the server:**
 
 ```
-sudo mv /tmp/records-export /var/lib/county-portal/import/
+sudo cp -r /media/usb/records-export /var/lib/county-portal/import/
 ```
-
-**From a USB drive plugged into the server:** copy the folder into
-`/var/lib/county-portal/import/`.
 
 After copying, let the portal read the files:
 
@@ -84,6 +90,9 @@ sudo countyctl app migrate records map /import/records-export
 This writes a mapping file at
 `/var/lib/county-portal/data/migration/mapping.yaml` with the portal's best
 guess for each field. Every guess is marked `# CHECK`.
+
+(Inside the portal, that folder is called `/data/migration`, and the commands
+print it that way. Either name works in commands.)
 
 ### Step 3. Check every guess
 
@@ -224,8 +233,8 @@ sudo countyctl app migrate bills map /import/tax-roll.csv --kind property_tax --
 ```
 
 `--kind` is `property_tax`, `court`, `utility`, `permit` or `other`.
-`--office` is the office that collects them (the short names are in
-**Content > Offices**). It writes
+`--office` is the office that collects them: its short name, shown as "Web
+address" when you edit the office in **Content > Offices**. It writes
 `/var/lib/county-portal/data/migration/bills-property_tax.yaml`.
 
 ### Step 3. Check the mapping
@@ -240,7 +249,7 @@ Check each column marked `CHECK`, and these settings:
 |---|---|
 | `amount_in_cents` | `true` if the export shows 21843 for $218.43 |
 | `allow_partial` | whether residents may pay part of a bill |
-| `sync` | `true` sets accounts missing from the file to $0 due, because they were paid or closed in the billing system |
+| `sync` | `true` sets accounts missing from the file to $0 due, because they were paid or closed in the billing system. Use it only with a complete export of every open account. As a safety net, a load that would set more than 20% of accounts to $0 stops without changing anything (add `--force` if it's really right) |
 
 ### Step 4. Dry run
 
@@ -257,7 +266,12 @@ the billing system's report. Nothing is changed.
 sudo countyctl app migrate bills load /var/lib/county-portal/data/migration/bills-property_tax.yaml
 ```
 
-New accounts are added and existing ones updated.
+New accounts are added and existing ones updated. It prints the batch
+number. To put the bills back exactly as they were before the latest load:
+
+```
+sudo countyctl app migrate bills undo --batch 7
+```
 
 ### Keep bills fresh every night
 

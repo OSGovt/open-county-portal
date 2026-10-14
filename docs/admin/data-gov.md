@@ -34,11 +34,11 @@ Save.
 Open `https://portal.example-county.gov/data.json` in a browser. You should
 see your datasets, each with your contact email.
 
-Run the catalog part of the conformance suite (setup is in
-[Accessibility testing](accessibility-testing.md#part-1-automated-check)):
+Run the catalog part of the conformance suite, from its `conformance` folder
+(setup is in [Accessibility testing](accessibility-testing.md#part-1-automated-check)):
 
 ```
-sudo .venv/bin/python run.py --url https://portal.example-county.gov --only catalog,api,bulk
+.venv/bin/python run.py --url https://portal.example-county.gov --only catalog,api,bulk
 ```
 
 It should show no failures.

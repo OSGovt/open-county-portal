@@ -35,8 +35,9 @@ Or from the server:
 sudo countyctl app user add --email pat.lee@example-county.gov --name "Pat Lee" --role cashier --office county-clerk
 ```
 
-Repeat `--role` or `--office` for several. Office names are the short names
-shown in **Content > Offices** (for example `county-clerk`, `tax-office`).
+Repeat `--role` or `--office` for several. An office's short name (for
+example `county-clerk`, `tax-office`) is shown as "Web address" when you edit
+the office in **Content > Offices**.
 
 ## First sign-in (for the staff member)
 

@@ -56,7 +56,7 @@ sudo countyctl logs app
 See what's using it:
 
 ```
-sudo du -sh /var/lib/county-portal/* /var/lib/county-portal/data/*
+sudo sh -c 'du -sh /var/lib/county-portal/* /var/lib/county-portal/data/*'
 ```
 
 - **Backups** are usually the biggest. Make sure off-site copies are working,

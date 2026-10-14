@@ -111,7 +111,7 @@ async def golive_save(request: Request):
 @router.get("/system/migrations")
 def migrations(request: Request):
     with get_engine().connect() as conn:
-        user = auth.require(request, conn, "admin")
+        user = auth.require(request, conn, "admin", "records")
         rows = conn.execute(select(import_batches).order_by(import_batches.c.id.desc())).mappings().all()
         return staff_render(request, "staff/migrations.html", conn, user, page_title="Imports", rows=rows)
 

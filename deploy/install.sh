@@ -156,6 +156,10 @@ say "  Version $(cat "$INSTALL_DIR/VERSION"). The 'countyctl' command is install
 section "Creating data folders and settings"
 mkdir -p "$DATA_ROOT"/{data,postgres,caddy,import,releases}
 chown -R 1000:1000 "$DATA_ROOT/data"
+# Data holds backups (with password hashes and keys) and residents' uploads: no one else may read it.
+chmod 700 "$DATA_ROOT/data" "$DATA_ROOT/caddy" "$DATA_ROOT/releases"
+# The administrator who ran the installer can copy exports straight into the import folder.
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != root ]; then chown "$SUDO_USER" "$DATA_ROOT/import"; fi
 chmod 755 "$DATA_ROOT/import"
 touch /var/log/county-portal.log
 if [ "$FRESH" -eq 1 ]; then

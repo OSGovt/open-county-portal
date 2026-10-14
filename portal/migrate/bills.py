@@ -95,17 +95,43 @@ def check(path: Path) -> dict:
     return {"rows": n, "accounts": len(seen), "total_due_cents": total, "problems": problems}
 
 
-def load(path: Path, log=print) -> int:
+SNAP_COLS = ("account", "office_slug", "name", "address", "amount_due_cents", "due_date", "description",
+             "allow_partial", "import_batch")
+MAX_DROP = 0.2  # refuse a sync that would zero more than 20% of accounts unless forced
+
+
+def _snapshot_path(batch: int) -> Path:
+    from ..settings import get_settings
+    d = get_settings().migration_dir / "bills-undo"
+    d.mkdir(parents=True, exist_ok=True)
+    return d / f"batch-{batch}.json"
+
+
+def load(path: Path, log=print, force: bool = False) -> int:
+    import json
     m = _load_mapping(path)
     kind, office = m["bill_kind"], m["office"]
     added = updated = zeroed = skipped = 0
+    rows = [r for _, r in _rows(m)]
     with tx() as conn:
+        current = [dict(r) for r in conn.execute(select(*[receivables.c[c] for c in SNAP_COLS])
+                                                 .where(receivables.c.kind == kind)).mappings()]
+        incoming = {r["account"] for r in rows if r["account"] and r["amount"] is not None}
+        if m.get("sync") and not force and len(current) >= 20:
+            missing = sum(1 for c in current if c["account"] not in incoming and c["amount_due_cents"])
+            if missing > MAX_DROP * len(current):
+                raise SystemExit(
+                    f"Stopped: this file would set {missing:,} of {len(current):,} {kind} accounts to $0. That usually "
+                    "means the export was cut short or is the wrong file. Nothing was changed. If it's right, run the "
+                    "same command again with --force.")
         batch = conn.execute(import_batches.insert().values(kind=f"bills:{kind}", source=m["source"]["file"], mapping=m)
                              .returning(import_batches.c.id)).scalar_one()
+        # Everything this load can change is saved first, so 'migrate bills undo' can put it back.
+        _snapshot_path(batch).write_text(json.dumps({"kind": kind, "rows": current}, default=str), encoding="utf-8")
         existing = {r.account: r.id for r in conn.execute(select(receivables.c.account, receivables.c.id)
                                                            .where(receivables.c.kind == kind))}
         seen = set()
-        for _, r in _rows(m):
+        for r in rows:
             if not r["account"] or r["amount"] is None or r["account"] in seen:
                 skipped += 1
                 continue
@@ -131,5 +157,41 @@ def load(path: Path, log=print) -> int:
             rows_rejected=skipped, signed_off_by="automatic (bill sync)"))
         audit(conn, "migration", "bills.load", "import_batch", batch,
               {"kind": kind, "added": added, "updated": updated, "zeroed": zeroed, "skipped": skipped})
-    log(f"Bills ({kind}): {added:,} added, {updated:,} updated, {zeroed:,} set to $0, {skipped:,} skipped.")
+    log(f"Batch {batch}. Bills ({kind}): {added:,} added, {updated:,} updated, {zeroed:,} set to $0, {skipped:,} skipped.")
+    log(f"To undo: countyctl app migrate bills undo --batch {batch}")
     return batch
+
+
+def undo(batch: int, log=print) -> None:
+    """Put a kind's bills back exactly as they were before batch N. Only the
+    latest load of that kind can be undone (later loads build on it)."""
+    import datetime as _dt
+    import json
+    snap = _snapshot_path(batch)
+    if not snap.exists():
+        raise SystemExit(f"No saved state for batch {batch}; it can't be undone.")
+    data = json.loads(snap.read_text(encoding="utf-8"))
+    kind = data["kind"]
+    with tx() as conn:
+        latest = conn.execute(select(import_batches.c.id).where(import_batches.c.kind == f"bills:{kind}",
+                                                                import_batches.c.status != "undone")
+                              .order_by(import_batches.c.id.desc())).scalar()
+        if latest != batch:
+            raise SystemExit(f"Batch {batch} isn't the latest {kind} load (that's batch {latest}). Undo that one first.")
+        before = {r["account"]: r for r in data["rows"]}
+        gone = receivables.delete().where(receivables.c.kind == kind)
+        if before:
+            gone = gone.where(receivables.c.account.notin_(list(before)))
+        conn.execute(gone)  # accounts the undone load added
+        for account, r in before.items():
+            values = {k: r[k] for k in SNAP_COLS if k != "account"}
+            if values.get("due_date"):
+                values["due_date"] = _dt.date.fromisoformat(str(values["due_date"])[:10])
+            values["updated_at"] = utcnow()
+            n = conn.execute(receivables.update().where(receivables.c.kind == kind, receivables.c.account == account)
+                             .values(**values)).rowcount
+            if not n:
+                conn.execute(receivables.insert().values(kind=kind, account=account, **values))
+        conn.execute(import_batches.update().where(import_batches.c.id == batch).values(status="undone"))
+        audit(conn, "migration", "bills.undo", "import_batch", batch, {"kind": kind, "accounts": len(before)})
+    log(f"Batch {batch} undone: {kind} bills are back to how they were before it ({len(before):,} accounts).")

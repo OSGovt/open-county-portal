@@ -8,19 +8,32 @@ you change the theme or add content templates.
 It reads public pages and submits public forms empty to check error handling.
 Empty submissions are rejected by the portal, so nothing is created.
 
-## Run it from any computer that can reach the portal
+## Run it
 
-1. Install the tools (once):
+Run it from a computer that can reach the portal: a workstation or a spare
+Linux machine is best, so the browser it uses isn't installed on the live
+server. These steps are for Ubuntu (on Windows, use WSL with Ubuntu).
+
+1. Install the tools and get a copy of the project (use the same release as
+   your portal):
 
 ```
-cd /opt/county-portal/conformance
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/playwright install --with-deps chromium
-npm ci
+sudo apt-get install -y git python3-venv nodejs npm
 ```
 
-2. Run the checks:
+```
+git clone --branch v1.0.0 https://github.com/OWNER/open-county-portal.git && cd open-county-portal/conformance
+```
+
+```
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+```
+
+```
+sudo .venv/bin/playwright install-deps chromium && .venv/bin/playwright install chromium && npm ci
+```
+
+2. Run the checks (from the `conformance` folder):
 
 ```
 .venv/bin/python run.py --url https://portal.example-county.gov

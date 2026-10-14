@@ -118,7 +118,7 @@ cmd_status() {
 
 cmd_logs() {
   need_root logs
-  compose logs --tail=200 -f "${1:-}"
+  compose logs --tail=200 -f ${1:+"$1"}
 }
 
 cmd_restart() {
@@ -219,10 +219,17 @@ cmd_update() {
     rm -rf "$tmp"
   elif [ -d "$INSTALL_DIR/.git" ]; then
     git -C "$INSTALL_DIR" fetch --tags --quiet
+    local auto=0
     if [ -z "$target" ]; then
       target="$(git -C "$INSTALL_DIR" tag --list 'v*' --sort=-version:refname | head -1)"
+      auto=1
     fi
     [ -n "$target" ] || die "No release tags found. Name a version, for example: sudo countyctl update v1.1.0"
+    if [ "$auto" -eq 1 ] && [ "$(printf '%s\n%s\n' "${target#v}" "$before" | sort -V | tail -1)" = "$before" ]; then
+      echo "Version $before is already the newest release (${target}). Nothing to do."
+      log "update: already newest ($before)"
+      return 0
+    fi
     git -C "$INSTALL_DIR" -c advice.detachedHead=false checkout --quiet "$target" \
       || die "Couldn't switch to $target. If files in $INSTALL_DIR were edited by hand, see docs/admin/updates.md."
   else

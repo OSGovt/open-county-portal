@@ -18,8 +18,9 @@ does the maintenance work, and every change it makes can be undone.
 - **Your old website is never touched.** The portal runs on its own server.
   The old site keeps running until the day you point DNS at the new one, and
   you can point it back the same day.
-- **Every import can be undone.** Records, bills and old web pages come in as
-  numbered batches. A batch can be removed as a whole.
+- **Every import can be undone.** Records and bills come in as numbered
+  batches that can be removed as a whole. Old web pages come in as unpublished
+  drafts.
 - **Every update can be undone.** `countyctl update` takes a backup first, and
   goes back on its own if the new version doesn't start.
 - **Every theme change can be undone.** Styles are previewed before

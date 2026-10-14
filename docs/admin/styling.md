@@ -34,7 +34,7 @@ They go into a preview, not the live site.
 **Settings > Theme.**
 
 - **Colors:** each color has a label saying where it's used. Type a hex code
-  such as `#0B5563` or use the color picker.
+  such as `#0B5563`.
 - **Font:** a system font (fast, nothing to download) or a custom one. For a
   custom font, give its name and an `https://` stylesheet address, for
   example from Google Fonts.
@@ -47,9 +47,10 @@ They go into a preview, not the live site.
 
 ## 4. Preview
 
-Choose **Preview changes**. The page shows a sample of the site in the new
-style, and a **Contrast check** table listing every text-and-background pair
-with its contrast ratio.
+Choose **Preview changes**. The Theme page comes back with your changes saved
+as a preview (not live), a **Contrast check** table beside the form listing
+every text-and-background pair with its contrast ratio, and a link to open a
+sample of the site in the new style.
 
 If a color doesn't have enough contrast to meet WCAG 2.1 AA (4.5 to 1 for
 text), the portal moves it lighter or darker, keeping the same hue, until it

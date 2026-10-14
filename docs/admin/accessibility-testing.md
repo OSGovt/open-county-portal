@@ -25,22 +25,33 @@ review, which takes about half a day and catches what machines can't.
 
 ## Part 1: Automated check
 
-Run the conformance suite from any computer that can reach the portal. The
-first time, install its tools (Python 3.10 or newer and Node.js 18 or newer
-must be installed):
+Run it from a computer that can reach the portal: a workstation or a spare
+Linux machine is best, so the browser it uses isn't installed on the live
+server. These steps are for Ubuntu (on Windows, use WSL with Ubuntu).
+
+1. Install the tools and get a copy of the project (use the same release as
+   your portal):
 
 ```
-cd /opt/county-portal/conformance && sudo python3 -m venv .venv && sudo .venv/bin/pip install -r requirements.txt
+sudo apt-get install -y git python3-venv nodejs npm
 ```
 
 ```
-sudo .venv/bin/playwright install --with-deps chromium && sudo npm ci
+git clone --branch v1.0.0 https://github.com/OWNER/open-county-portal.git && cd open-county-portal/conformance
 ```
 
-Then run it:
+```
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+```
 
 ```
-sudo .venv/bin/python run.py --url https://portal.example-county.gov
+sudo .venv/bin/playwright install-deps chromium && .venv/bin/playwright install chromium && npm ci
+```
+
+2. Run the checks (from the `conformance` folder):
+
+```
+.venv/bin/python run.py --url https://portal.example-county.gov
 ```
 
 It checks every public page it can find at desktop width and at a 320-pixel

@@ -77,9 +77,9 @@ secret_key: rk_test_your_key_here
    portal's receipt page. The payment appears in the Stripe Dashboard (test
    mode) and in **Finance** in the portal.
 
-6. **Test a refund.** Signed in as a supervisor, go to **Counter > Close
-   drawer**, enter the order number and a reason under the void form, and
-   void it. The message should say "voided and refunded to the card". The
+6. **Test a refund.** Signed in as a supervisor, go to **Counter**, then
+   **Close drawer** (the Void a sale form is on that page even without an open
+   drawer), enter the order number and a reason, and void it. The message should say "voided and refunded to the card". The
    refund appears in Stripe.
 
 7. **Go live.** Make a live restricted key (`rk_live_...`) the same way,

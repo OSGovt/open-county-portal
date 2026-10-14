@@ -42,7 +42,9 @@ sudo du -sh /var/lib/county-portal/import/*
 ```
 
 The size of the images folder there is close to what the portal will use for
-images, because it keeps your files as they are.
+images, because it keeps your files as they are. While migrating you need
+room for both: the export in `import/` and the copy in the portal. Delete the
+export once the clerk has signed off.
 
 **A worked example** (an estimate): a county with 2 million pages at 60 KB
 per page needs about 120 GB for images, 12 GB for display copies, 3 GB for

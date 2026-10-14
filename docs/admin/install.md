@@ -43,15 +43,19 @@ sudo apt-get install -y git
 
 ## 4. Download the portal
 
+Use the newest release number from the project's Releases page in place of
+`v1.0.0`:
+
 ```
-sudo git clone https://github.com/OWNER/open-county-portal.git /opt/county-portal
+sudo git clone --branch v1.0.0 https://github.com/OWNER/open-county-portal.git /opt/county-portal
 ```
 
-(Use the address shown on the project's GitHub page.) Installing with git
-lets `countyctl update` fetch new releases.
+Installing with git lets `countyctl update` fetch new releases.
 
-No internet access from the server? Download the release `.tar.gz` file on
-another computer, copy it over, and unpack it:
+No access to GitHub from the server? Download the release `.tar.gz` file on
+another computer, copy it over, and unpack it. (The server still needs the
+other internet access listed in [Server size](sizing.md#network) to install
+Docker and build the portal.)
 
 ```
 sudo mkdir -p /opt/county-portal && sudo tar -xzf open-county-portal-*.tar.gz -C /opt/county-portal --strip-components=1
@@ -98,7 +102,8 @@ Sign in to the staff console:  https://portal.example-county.gov/staff
   Temporary password: Abcde-Fghij-Klmno-Pqrst
 ```
 
-The temporary password works once. If you lose it, run
+The temporary password works until you choose your own at first sign-in. If
+you lose it, run
 `sudo countyctl app user reset --email you@example-county.gov` for a new one.
 
 The same note is saved in `/var/lib/county-portal/data/status/first-admin.txt`

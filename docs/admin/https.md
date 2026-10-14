@@ -135,10 +135,10 @@ nightly run rewrites them, or run `sudo countyctl app export-bulk` now.
 ## Check
 
 ```
-curl -sI https://portal.example-county.gov/healthz | head -1
+curl -s -o /dev/null -w '%{http_code}\n' https://portal.example-county.gov/healthz
 ```
 
-shows `HTTP/2 200`. `sudo countyctl doctor` checks the certificate too, in
+shows `200`. `sudo countyctl doctor` checks the certificate too, in
 public mode.
 
 Next: [Outgoing email](email.md).

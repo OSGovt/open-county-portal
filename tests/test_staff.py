@@ -245,3 +245,13 @@ def test_every_guide_renders_in_help(admin):
         assert "<h1" in r.text, rel
     # links between guides point inside Help
     assert 'href="/staff/help/admin/install"' in admin.get("/staff/help/admin/README").text
+
+
+def test_stay_signed_in_and_idle_signout(client, monkeypatch):
+    from portal import auth
+    staff_login(client)
+    assert client.post("/staff/ping").json() == {"ok": True}
+    monkeypatch.setattr(auth, "STAFF_IDLE_SECONDS", -1)
+    assert client.post("/staff/ping").json() == {"ok": False}
+    r = client.get("/staff/", follow_redirects=False)
+    assert r.status_code == 303 and "/staff/login" in r.headers["location"]

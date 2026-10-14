@@ -103,8 +103,8 @@ completing: ask a supervisor to void it.
 
 ## Supervisors
 
-- **Void a sale:** on the **Close drawer** page, enter the order number and a
-  reason. Bill balances and escrow are restored. If the payment went through
+- **Void a sale:** **Counter > Close drawer** (you don't need a drawer open),
+  enter the order number and a reason. Bill balances and escrow are restored. If the payment went through
   a connected processor, it's refunded to the card first; if the refund
   fails, nothing is voided and the message says why. For cash, return the
   money from the drawer.

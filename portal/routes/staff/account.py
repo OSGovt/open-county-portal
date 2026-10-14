@@ -68,6 +68,9 @@ def _finish_login(request: Request, conn, user: dict) -> RedirectResponse:
     request.session["staff_id"] = user["id"]
     request.session["staff_name"] = user["name"]
     request.session["staff_mfa_ok"] = True
+    import time as _time
+    request.session["staff_since"] = _time.time()
+    request.session["staff_seen"] = _time.time()
     conn.execute(users.update().where(users.c.id == user["id"]).values(last_login=utcnow()))
     audit(conn, user["email"], "login.success", "user", user["email"], ip=client_ip(request))
     if user["must_change_password"]:
@@ -179,4 +182,6 @@ async def logout(request: Request):
 @router.post("/ping")
 async def ping(request: Request):
     """Keeps a staff session alive when the person chooses 'Stay signed in'."""
-    return JSONResponse({"ok": bool(request.session.get("staff_mfa_ok"))})
+    with get_engine().connect() as conn:
+        user = auth.current_staff(request, conn)  # refreshes the idle timer
+    return JSONResponse({"ok": user is not None})

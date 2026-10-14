@@ -23,19 +23,23 @@ Restart at a quiet time with `sudo reboot`; the portal comes back on its own.
 
 ## 2. Firewall
 
-Allow only SSH, HTTP and HTTPS. If you manage SSH from a known network,
-allow SSH only from there (replace the address with your admin network):
+Allow only SSH, HTTP and HTTPS. **Add the SSH rule before turning the
+firewall on**, or you'll lock yourself out.
 
 ```
-sudo ufw allow from 10.0.0.0/8 to any port 22 proto tcp
-```
-
-```
-sudo ufw allow 80/tcp && sudo ufw allow 443/tcp
+sudo ufw allow OpenSSH && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp
 ```
 
 ```
 sudo ufw enable
+```
+
+To allow SSH only from your admin network instead (replace the address),
+add the narrow rule, check you can still connect from a second window, then
+remove the general one:
+
+```
+sudo ufw allow from 10.0.0.0/8 to any port 22 proto tcp && sudo ufw delete allow OpenSSH
 ```
 
 Note: Docker publishes ports 80 and 443 itself, so they stay open even if ufw
@@ -47,10 +51,11 @@ Set up key sign-in for each administrator, test that it works in a second
 window, then turn off password sign-in:
 
 ```
-sudo nano /etc/ssh/sshd_config.d/90-county-portal.conf
+sudo nano /etc/ssh/sshd_config.d/01-county-portal.conf
 ```
 
-Add these lines and save:
+Add these lines and save (the `01` makes it win over the cloud image's own
+settings file):
 
 ```
 PasswordAuthentication no
@@ -59,6 +64,12 @@ PermitRootLogin no
 
 ```
 sudo systemctl reload ssh
+```
+
+Check it took effect; both should say `no`:
+
+```
+sudo sshd -T | grep -Ei '^(passwordauthentication|permitrootlogin)'
 ```
 
 ## 4. Keep the settings file private
@@ -72,6 +83,11 @@ If you think it leaked: generate a new `PORTAL_SECRET_KEY`
 out and signs in again as usual; phone codes keep working, and certified
 copies issued before still verify, because both are stored in the database.
 Also change the email password and the off-site backup credentials it holds.
+
+The installer also makes `/var/lib/county-portal/data` (database backups,
+residents' uploads) readable only by root and the portal. The portal runs as
+user number 1000, which on many servers is also the first account created
+(often `ubuntu`); treat that account as an administrator account.
 
 ## 5. Staff accounts
 

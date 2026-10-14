@@ -22,6 +22,22 @@ def _confirm(msg: str, yes: bool) -> bool:
     return input(f"{msg} Type yes to continue: ").strip().lower() == "yes"
 
 
+HOST_DATA = "/var/lib/county-portal/data"
+HOST_IMPORT = "/var/lib/county-portal/import"
+
+
+def _p(path: str | None) -> str | None:
+    """Accept the server's paths as well as the container's: on the server the
+    folders are /var/lib/county-portal/data and /import is /var/lib/county-portal/import."""
+    if not path or Path(path).exists():
+        return path
+    if path.startswith(HOST_DATA):
+        return str(get_settings().data_dir) + path[len(HOST_DATA):]
+    if path.startswith(HOST_IMPORT):
+        return "/import" + path[len(HOST_IMPORT):]
+    return path
+
+
 def _out(path: str | None, default: str) -> Path:
     p = Path(path) if path else get_settings().migration_dir / default
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -29,6 +45,9 @@ def _out(path: str | None, default: str) -> Path:
 
 
 def cmd_records(a) -> int:
+    a.target = _p(a.target)
+    if getattr(a, 'out', None):
+        a.out = _p(a.out)
     from . import records as r
     if a.step == "inventory":
         inv = r.inventory(Path(a.target))
@@ -92,6 +111,12 @@ def cmd_records(a) -> int:
 
 
 def cmd_bills(a) -> int:
+    a.target = _p(a.target)
+    if a.step != "undo" and not a.target:
+        print("Give the export file (map) or the mapping file (check, load).")
+        return 1
+    if getattr(a, 'out', None):
+        a.out = _p(a.out)
     from . import bills as b
     if a.step == "map":
         if not a.kind or not a.office:
@@ -111,12 +136,21 @@ def cmd_bills(a) -> int:
         print("Nothing was changed.")
         return 0
     if a.step == "load":
-        b.load(Path(a.target))
+        b.load(Path(a.target), force=a.force)
+        return 0
+    if a.step == "undo":
+        if not a.batch:
+            print("Add --batch N (the number shown when the bills were loaded; also in System > Imports).")
+            return 1
+        b.undo(a.batch)
         return 0
     return 1
 
 
 def cmd_site(a) -> int:
+    a.target = _p(a.target)
+    if getattr(a, 'out', None):
+        a.out = _p(a.out)
     from . import site as s
     if a.step == "crawl":
         if not a.target:
@@ -146,8 +180,10 @@ def register(sub) -> None:
     rp.set_defaults(fn=cmd_records)
 
     bp = msub.add_parser("bills", help="Tax roll, court costs, utility accounts.")
-    bp.add_argument("step", choices=["map", "check", "load"])
-    bp.add_argument("target", help="Export file (map) or mapping file (check, load)")
+    bp.add_argument("step", choices=["map", "check", "load", "undo"])
+    bp.add_argument("target", nargs="?", help="Export file (map) or mapping file (check, load)")
+    bp.add_argument("--batch", type=int, help="Batch number (undo)")
+    bp.add_argument("--force", action="store_true", help="Load even if many accounts would be set to $0")
     bp.add_argument("--kind")
     bp.add_argument("--office")
     bp.add_argument("--out")
