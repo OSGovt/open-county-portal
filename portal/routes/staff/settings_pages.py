@@ -279,6 +279,10 @@ async def payments_save(request: Request):
             raise HTTPException(400)
         p["processor"] = processor
         p["methods"] = [m for m in ("card", "wallet", "ach") if form.get(f"m_{m}") == "on"] or ["card"]
+        if processor == "stripe" and "ach" in p["methods"]:
+            p["methods"].remove("ach")
+            p["methods"] = p["methods"] or ["card"]
+            flash(request, "eCheck was turned off: the Stripe adapter supports cards and wallets only.", "warning")
         try:
             p["card_fee_percent"] = float(str(form.get("card_fee_percent", "0")).strip() or 0)
         except ValueError:

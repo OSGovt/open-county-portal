@@ -127,3 +127,22 @@ def test_upload_type_is_checked(client):
                           "requester_name": "Pat Lee", "email": "pat@example.com", "delivery": "Mail it to me"},
                     files={"id_photo": ("id.jpg", b"not really a jpeg", "image/jpeg")})
     assert r.status_code == 400 and "doesn&#39;t look like" in r.text
+
+
+def test_voiding_online_order_refunds_through_processor(client):
+    from portal.db import audit_log
+
+    from .conftest import staff_login
+    _set_policy(processor="test", card_fee_percent=0, card_fee_flat_cents=0, card_fee_min_cents=0, methods=["card"])
+    _add_tax(client, "partial", "10.00")
+    receipt, number = _pay(client)
+    assert "Paid" in receipt.text or "paid" in receipt.text
+    staff_login(client)
+    token = csrf(client, "/staff/counter/close")
+    r = client.post("/staff/counter/void", data={"_csrf": token, "number": number, "reason": "Paid twice"},
+                    follow_redirects=True)
+    assert "voided and refunded" in r.text
+    with tx() as conn:
+        assert conn.execute(select(orders.c.status).where(orders.c.number == number)).scalar_one() == "void"
+        assert conn.execute(select(audit_log.c.id).where(audit_log.c.action == "order.refund",
+                                                         audit_log.c.object_id == number)).first()

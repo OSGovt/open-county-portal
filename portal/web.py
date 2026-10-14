@@ -13,7 +13,7 @@ from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from markdown_it import MarkdownIt
-from markupsafe import Markup
+from markupsafe import Markup, escape
 
 from . import __version__, config_store
 from .db import get_engine, settings_table
@@ -77,7 +77,15 @@ def longdate(value: dt.date | dt.datetime | None) -> str:
     return value.strftime("%B %-d, %Y")
 
 
+def doclinks(text: str) -> Markup:
+    """Turn 'docs/admin/x.md' mentions into links to the built-in Help page."""
+    import re as _re
+    out = str(escape(text))
+    return Markup(_re.sub(r"docs/([a-z0-9_/-]+)\.md", lambda m: f'<a href="/staff/help/{m.group(1)}">the guide</a>', out))
+
+
 templates.env.filters["money"] = money
+templates.env.filters["doclinks"] = doclinks
 templates.env.filters["markdown"] = markdown
 templates.env.filters["localtime"] = local
 templates.env.filters["longdate"] = longdate

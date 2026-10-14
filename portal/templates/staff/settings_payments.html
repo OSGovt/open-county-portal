@@ -7,7 +7,7 @@
   <h2>Payment processor</h2>
   <fieldset class="field"><legend>Processor</legend>
     {% for code, a in adapters.items() %}<label class="choice"><input type="radio" name="processor" value="{{ code }}"{% if p.processor == code %} checked{% endif %}> {{ a.name }}</label>{% endfor %}
-    <span class="hint">A real processor needs an adapter for that company. See the implementer guide, "Connecting a payment processor".</span>
+    <span class="hint">A real processor needs an adapter for that company. See <a href="/staff/help/admin/payments">Connecting a payment processor</a>.</span>
   </fieldset>
   <fieldset class="field"><legend>Ways residents can pay online</legend>
     <label class="choice"><input type="checkbox" name="m_card"{% if 'card' in p.methods %} checked{% endif %}> Credit and debit cards</label>

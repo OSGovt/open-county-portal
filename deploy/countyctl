@@ -33,8 +33,11 @@ env_value() {
 }
 
 app() {
-  # Run an application command inside the running app container.
-  compose exec -T app python -m portal.cli "$@"
+  # Run an application command inside the running app container. With a
+  # keyboard attached, commands can ask "Type yes to continue".
+  local tty=(-T)
+  if [ -t 0 ] && [ -t 1 ]; then tty=(); fi
+  compose exec "${tty[@]}" app python -m portal.cli "$@"
 }
 
 healthy() {

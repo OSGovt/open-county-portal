@@ -268,12 +268,33 @@ async def void(request: Request):
         if not reason:
             flash(request, "Give a reason for the void.", "error")
             return RedirectResponse("/staff/counter/close", status_code=303)
+        o = order_mod.get(conn, number)
+        refunded = None
+        if o and o["status"] == "paid" and o.get("processor_ref"):
+            # Paid through a processor (online or a connected terminal): refund there first.
+            policy = config_store.get(conn, "payments")
+            code = o.get("processor") or policy.get("processor") or "test"
+            try:
+                adapter = payments.get(code)
+                result = adapter.refund(order=o, amount_cents=o["total_cents"],
+                                        settings=policy.get("processor_settings") or {})
+            except Exception as exc:  # network or configuration problem: nothing is voided
+                result = payments.PaymentResult(False, number, None, o["total_cents"], "card", str(exc))
+            if not result.ok:
+                flash(request, f"Couldn't refund through {code}: {result.message} The order was not voided.", "error")
+                return RedirectResponse("/staff/counter/close", status_code=303)
+            refunded = result.processor_ref
+            audit(conn, user["email"], "order.refund", "order", number,
+                  {"processor": code, "refund_ref": refunded, "amount_cents": o["total_cents"]})
         try:
             order_mod.void(conn, number, user["email"], reason)
         except (KeyError, ValueError) as exc:
             flash(request, f"Couldn't void: {exc}", "error")
             return RedirectResponse("/staff/counter/close", status_code=303)
-    flash(request, f"Order {number} voided. Return any cash from the drawer.")
+    if refunded:
+        flash(request, f"Order {number} voided and refunded to the card (refund {refunded}).")
+    else:
+        flash(request, f"Order {number} voided. Return any cash from the drawer, or refund a card on the terminal it was run on.")
     return RedirectResponse("/staff/counter/close", status_code=303)
 
 

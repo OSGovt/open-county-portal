@@ -70,4 +70,4 @@ def installed() -> dict[str, Adapter]:
     return dict(_registry)
 
 
-from . import manual, test_processor  # noqa: E402,F401  (registers built-in adapters)
+from . import manual, stripe_checkout, test_processor  # noqa: E402,F401  (registers built-in adapters)
