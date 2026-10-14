@@ -1,0 +1,68 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/settings">Settings</a></p>
+<h1>Theme</h1>
+<p>Change colors, logo and type. Every color pairing is checked against WCAG 2.1 contrast before it can be published, and any color that falls short is adjusted automatically, keeping its hue. Nothing changes on the live site until you choose <strong>Publish</strong>.</p>
+{% if proposal %}<p class="banner">You are editing a <strong>preview</strong>. <a href="/staff/settings/theme/preview">Open the preview</a> to see it on real pages.</p>{% endif %}
+<div class="split">
+  <form method="post" action="/staff/settings/theme" enctype="multipart/form-data" class="main card" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <h2>Colors</h2>
+    <div class="grid">
+      {% for key, value in t.colors.items() %}
+      <div class="field">
+        <label for="c-{{ key }}">{{ labels.get(key, key) }}</label>
+        <span class="cluster" style="gap: 0.5rem"><span class="swatch" style="background: {{ value }}" aria-hidden="true"></span>
+          <input type="text" id="c-{{ key }}" name="c_{{ key }}" value="{{ value }}" style="max-width: 9rem" pattern="#?[0-9A-Fa-f]{3,6}"></span>
+      </div>
+      {% endfor %}
+    </div>
+    <h2>Type</h2>
+    <div class="field"><label for="font">Font</label>
+      <select id="font" name="font">{% for key, stack in fonts.items() %}<option value="{{ key }}"{% if t.font == key %} selected{% endif %}>{{ key|capitalize }}: {{ stack.split(',')[0].strip("'") }}</option>{% endfor %}<option value="custom"{% if t.font == 'custom' %} selected{% endif %}>Custom (enter below)</option></select></div>
+    <div class="field"><label for="ffc">Custom font name (optional)</label><input type="text" id="ffc" name="font_family_custom" value="{{ t.font_family_custom }}"></div>
+    <div class="field"><label for="fcss">Font stylesheet address (optional, https only)</label><span class="hint" id="fcss-hint">Leave blank to use fonts already on visitors' devices, which is fastest and shares nothing with a font service.</span>
+      <input type="text" id="fcss" name="font_css_url" value="{{ t.font_css_url }}" aria-describedby="fcss-hint"></div>
+    <div class="grid">
+      <div class="field"><label for="bs">Base text size (16 to 22 pixels)</label><input type="number" id="bs" name="base_size" value="{{ t.base_size }}" min="16" max="22"></div>
+      <div class="field"><label for="rad">Corner rounding (0 to 16 pixels)</label><input type="number" id="rad" name="radius" value="{{ t.radius }}" min="0" max="16"></div>
+    </div>
+    <h2>Logo</h2>
+    {% if t.logo_file_id %}<p><img src="/files/{{ t.logo_file_id }}" alt="Current logo" style="max-height: 64px; background: {{ t.colors.header_bg }}; padding: 6px"></p>
+    <label class="choice"><input type="checkbox" name="remove_logo"> Remove the logo</label>{% endif %}
+    <div class="field"><label for="logo">Upload a logo or seal</label><span class="hint" id="logo-hint">PNG, SVG, JPG or WEBP. It appears on the header color above.</span><input type="file" id="logo" name="logo" accept=".png,.svg,.jpg,.jpeg,.webp" aria-describedby="logo-hint"></div>
+    <div class="field"><label for="lalt">Logo description for screen readers</label><span class="hint" id="lalt-hint">For example: Example County seal</span><input type="text" id="lalt" name="logo_alt" value="{{ t.logo_alt }}" aria-describedby="lalt-hint"></div>
+    <label class="choice"><input type="checkbox" name="show_name_with_logo"{% if t.show_name_with_logo %} checked{% endif %}> Show the name beside the logo</label>
+    <div class="cluster" style="margin-top: 1rem">
+      <button class="btn secondary" type="submit" name="action" value="preview">Preview changes</button>
+      <button class="btn" type="submit" name="action" value="publish">Publish to the live site</button>
+      {% if proposal %}<button class="btn danger" type="submit" name="action" value="discard">Discard preview</button>{% endif %}
+    </div>
+  </form>
+  <aside class="side stack">
+    <section class="card">
+      <h2>Contrast check</h2>
+      <p>{% if result.passed %}<span class="pill ok">All pairings pass</span>{% else %}<span class="pill bad">Some pairings fail</span>{% endif %}</p>
+      {% if result.changes %}<p><strong>Adjusted automatically:</strong></p><ul class="small">{% for c in result.changes %}<li>{{ c }}</li>{% endfor %}</ul>{% endif %}
+      <details><summary style="min-height: 44px; display: flex; align-items: center; font-weight: 700; cursor: pointer">See every pairing</summary>
+        <table class="data small"><thead><tr><th scope="col">Pairing</th><th scope="col" class="num">Ratio</th></tr></thead><tbody>
+        {% for c in result.checks %}<tr><td>{{ c.description }}</td><td class="num">{{ c.ratio }}:1 {% if c.passed %}<span class="visually-hidden">passes</span>{% else %}<span class="pill bad">below {{ c.minimum }}</span>{% endif %}</td></tr>{% endfor %}
+        </tbody></table></details>
+    </section>
+    <form method="post" action="/staff/settings/theme/import" class="card" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <h2>Start from the old site</h2>
+      <p class="small">Reads the old site's colors so the new site feels familiar. Only reads the page; changes nothing there.</p>
+      <div class="field"><label for="iurl">Old site address</label><input type="url" id="iurl" name="url" placeholder="https://www.example-county.gov"></div>
+      <button class="btn secondary" type="submit">Import colors as a preview</button>
+    </form>
+    <section class="card">
+      <h2>Earlier versions</h2>
+      <ul class="plain">{% for h in history %}
+        <li><form method="post" action="/staff/settings/theme"><input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="action" value="restore"><input type="hidden" name="history_id" value="{{ h.id }}">
+          {{ h.changed_at|localtime }} by {{ h.changed_by or 'setup' }} <button class="linkbutton" type="submit">Restore<span class="visually-hidden"> the version from {{ h.changed_at|localtime }}</span></button></form></li>
+      {% else %}<li>The site is using the default theme.</li>{% endfor %}</ul>
+    </section>
+  </aside>
+</div>
+{% endblock %}

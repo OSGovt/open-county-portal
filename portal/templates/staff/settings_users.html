@@ -1,0 +1,41 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/settings">Settings</a></p>
+<h1>Staff accounts</h1>
+{% if new_password %}
+<div class="banner" role="alert" style="margin-bottom: 1rem"><strong>Give this temporary password to {{ new_password.email }} in person or by phone.</strong>
+  It is shown only once: <code style="font-size: 1.15rem">{{ new_password.password }}</code>. They will choose their own password and set up a phone code when they first sign in.</div>
+{% endif %}
+<ul class="plain">
+  {% for u in rows %}
+  <li class="card">
+    <h2 style="font-size: 1.15rem">{{ u.name }} <span class="muted small">{{ u.email }}</span>{% if not u.active %} <span class="pill bad">Disabled</span>{% endif %}{% if not u.mfa_enrolled %} <span class="pill warn">Phone code not set up</span>{% endif %}</h2>
+    <form method="post" action="/staff/settings/users" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="user_id" value="{{ u.id }}">
+      <fieldset class="field"><legend>Roles</legend><div class="grid">
+        {% for code, desc in roles.items() %}<label class="choice"><input type="checkbox" name="roles" value="{{ code }}"{% if code in u.roles %} checked{% endif %}> <span><strong>{{ code }}</strong><br><span class="small">{{ desc.split(':')[1] if ':' in desc else desc }}</span></span></label>{% endfor %}
+      </div></fieldset>
+      <fieldset class="field"><legend>Offices (for cashiers)</legend><div class="grid">
+        {% for slug, name in office_rows %}<label class="choice"><input type="checkbox" name="offices" value="{{ slug }}"{% if slug in u.offices %} checked{% endif %}> {{ name }}</label>{% endfor %}
+      </div></fieldset>
+      <div class="cluster">
+        <button class="btn secondary" type="submit" name="action" value="update">Save roles<span class="visually-hidden"> for {{ u.name }}</span></button>
+        <button class="btn secondary" type="submit" name="action" value="reset">Reset password and phone code<span class="visually-hidden"> for {{ u.name }}</span></button>
+        {% if u.active %}<button class="btn danger" type="submit" name="action" value="disable">Disable<span class="visually-hidden"> {{ u.name }}</span></button>
+        {% else %}<button class="btn secondary" type="submit" name="action" value="enable">Re-enable<span class="visually-hidden"> {{ u.name }}</span></button>{% endif %}
+      </div>
+      <p class="small muted" style="margin-top: 0.5rem">Last sign-in: {{ u.last_login|localtime if u.last_login else 'never' }}</p>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+<form method="post" action="/staff/settings/users" class="card" style="margin-top: 1.5rem" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="action" value="add">
+  <h2>Add a staff member</h2>
+  <div class="field"><label for="nu-name">Full name</label><input type="text" id="nu-name" name="name"></div>
+  <div class="field"><label for="nu-email">Work email</label><input type="email" id="nu-email" name="email"></div>
+  <fieldset class="field"><legend>Roles</legend><div class="grid">{% for code, desc in roles.items() %}<label class="choice"><input type="checkbox" name="roles" value="{{ code }}"> {{ code }}</label>{% endfor %}</div></fieldset>
+  <fieldset class="field"><legend>Offices (for cashiers)</legend><div class="grid">{% for slug, name in office_rows %}<label class="choice"><input type="checkbox" name="offices" value="{{ slug }}"> {{ name }}</label>{% endfor %}</div></fieldset>
+  <button class="btn" type="submit">Create account</button>
+</form>
+{% endblock %}

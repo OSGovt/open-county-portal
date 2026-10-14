@@ -1,0 +1,30 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/records">Records</a></p>
+<h1>{{ r.doc_type }} {{ r.instrument_number }}</h1>
+<p>{% if r.status == 'public' %}<a href="/records/{{ r.instrument_number }}">View the public page</a>{% else %}<span class="pill warn">Restricted: not shown to the public or in the API</span>{% endif %}</p>
+<div class="split">
+  <form method="post" action="/staff/records/{{ r.instrument_number }}" class="main card" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <h2>Index information</h2>
+    <p class="small muted">Corrections change the online index only. The recorded document images are never altered.</p>
+    <div class="field"><label for="doc_type">Instrument type</label><input type="text" id="doc_type" name="doc_type" value="{{ r.doc_type }}"></div>
+    <div class="field"><label for="grantors">Grantors, one per line</label><textarea id="grantors" name="grantors" rows="3">{{ r.grantors|join('\n') }}</textarea></div>
+    <div class="field"><label for="grantees">Grantees, one per line</label><textarea id="grantees" name="grantees" rows="3">{{ r.grantees|join('\n') }}</textarea></div>
+    <div class="field"><label for="legal">Legal description</label><textarea id="legal" name="legal_description" rows="3">{{ r.legal_description or '' }}</textarea></div>
+    <div class="field"><label for="pid">Appraisal district property ID</label><input type="text" id="pid" name="property_id" value="{{ r.property_id or '' }}"></div>
+    <div class="field"><label for="remarks">Remarks</label><textarea id="remarks" name="remarks" rows="2">{{ r.remarks or '' }}</textarea></div>
+    <fieldset class="field"><legend>Who can see it</legend>
+      <label class="choice"><input type="radio" name="status" value="public"{% if r.status == 'public' %} checked{% endif %}> Public</label>
+      <label class="choice"><input type="radio" name="status" value="restricted"{% if r.status != 'public' %} checked{% endif %}> Restricted (sealed or confidential by law)</label></fieldset>
+    <div class="field"><label for="reason">Reason for this change (kept in the audit log)</label><input type="text" id="reason" name="reason"></div>
+    <button class="btn" type="submit">Save</button>
+  </form>
+  <section class="side card">
+    <h2>Pages</h2>
+    <ul>{% for i in r.images %}<li>Page {{ i.seq }}: <a href="/staff/records/{{ r.instrument_number }}/pages/{{ i.seq }}/redact">Review or redact<span class="visually-hidden"> page {{ i.seq }}</span></a>{% if i.redacted %} <span class="pill warn">Redacted</span>{% endif %}</li>{% else %}<li>No images.</li>{% endfor %}</ul>
+    <form method="post" action="/staff/records/{{ r.instrument_number }}/ocr"><input type="hidden" name="_csrf" value="{{ csrf }}">
+      <button class="btn secondary" type="submit">Re-read the text of every page</button></form>
+  </section>
+</div>
+{% endblock %}

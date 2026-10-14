@@ -1,0 +1,14 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<h1>Settings</h1>
+<ul class="grid plain">
+  <li style="margin: 0"><a class="tile" href="/staff/settings/site"><strong>Site identity and alert</strong><span>Name, address, contact, the alert banner</span></a></li>
+  <li style="margin: 0"><a class="tile" href="/staff/settings/theme"><strong>Theme</strong><span>Colors, logo, fonts, with automatic contrast checks</span></a></li>
+  <li style="margin: 0"><a class="tile" href="/staff/settings/payments"><strong>Payments, records and open data</strong><span>Processor, card fees, downloads, data terms</span></a></li>
+  <li style="margin: 0"><a class="tile" href="/staff/settings/users"><strong>Staff accounts</strong><span>Add people, roles, offices, resets</span></a></li>
+  <li style="margin: 0"><a class="tile" href="/staff/content/fees"><strong>Fee schedule</strong><span>Confirm and schedule fee changes</span></a></li>
+  <li style="margin: 0"><a class="tile" href="/staff/settings/forms"><strong>Custom forms</strong><span>Add forms beyond the state pack</span></a></li>
+  <li style="margin: 0"><a class="tile" href="/staff/settings/api-keys"><strong>API keys</strong><span>Free keys for heavy data users</span></a></li>
+  <li style="margin: 0"><a class="tile" href="/staff/system"><strong>System</strong><span>Go-live checklist, imports, backups, audit log</span></a></li>
+</ul>
+{% endblock %}

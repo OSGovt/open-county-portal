@@ -1,0 +1,13 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/settings">Settings</a></p>
+<h1>Custom forms</h1>
+<p>Forms from your state pack are already available. Add your own here, written in the same format the state pack uses. Each form appears at <code>/apply/form-name</code> and is accessible automatically: labels, hints, errors and phone-camera uploads are built in.</p>
+{% if problems %}<div class="error-summary" role="alert"><h2>Fix these before saving</h2><ul>{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul></div>{% endif %}
+<form method="post" action="/staff/settings/forms" class="card" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <div class="field"><label for="forms">Forms</label><span class="hint" id="forms-hint">Example:<br><code>burn-permit:<br>&nbsp;&nbsp;title: Request a burn permit<br>&nbsp;&nbsp;office: commissioners-court<br>&nbsp;&nbsp;fields:<br>&nbsp;&nbsp;&nbsp;&nbsp;- {name: email, label: Email, type: email, required: true}</code></span>
+    <textarea id="forms" name="forms" rows="18" style="max-width: none; font-family: ui-monospace, Menlo, Consolas, monospace" aria-describedby="forms-hint">{{ text }}</textarea></div>
+  <button class="btn" type="submit">Check and save</button>
+</form>
+{% endblock %}

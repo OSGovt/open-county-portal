@@ -25,7 +25,7 @@
     <section aria-labelledby="img-h" class="card">
       <h2 id="img-h">Document {% if count %}page {{ p }} of {{ count }}{% else %}image{% endif %}</h2>
       {% if current %}
-      <img class="page-image" src="/records/{{ r.instrument_number }}/pages/{{ current.seq }}.png"
+      <img class="page-image" src="/records/{{ r.instrument_number }}/pages/{{ current.seq }}.png?v={{ current.updated_at.timestamp()|int }}"
            alt="Scanned image of page {{ p }} of {{ count }}. The machine-read text of this page follows the image.">
       {% if current.redacted %}<p class="small muted">Some personal information on this page is hidden in the online copy, as state law requires. The official record is unchanged.</p>{% endif %}
       {% if count > 1 %}

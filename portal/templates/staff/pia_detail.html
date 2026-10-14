@@ -1,0 +1,23 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/pia">All requests</a></p>
+<h1>{{ r.number }}</h1>
+<div class="split">
+  <div class="main stack">
+    <section class="card"><h2>Request</h2><p style="white-space: pre-line">{{ r.description }}</p>
+      <p class="muted">Received {{ r.received_at|localtime }} · delivery: {{ r.delivery }}</p></section>
+    <form method="post" action="/staff/pia/{{ r.number }}" class="card" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <div class="field"><label for="status">Status</label><select id="status" name="status">{% for val, lab in statuses %}<option value="{{ val }}"{% if r.status == val %} selected{% endif %}>{{ lab }}</option>{% endfor %}</select></div>
+      <div class="field"><label for="response">Response to the requester</label><textarea id="response" name="response" rows="8">{{ r.response or '' }}</textarea></div>
+      <div class="field"><label for="notes">Staff notes (never published)</label><textarea id="notes" name="staff_notes" rows="4">{{ r.staff_notes or '' }}</textarea></div>
+      <label class="choice"><input type="checkbox" name="publish_response"{% if r.publish_response %} checked{% endif %}> Publish this request and response in the public archive</label>
+      <label class="choice"><input type="checkbox" name="send"> Email the response to the requester now</label>
+      <button class="btn" type="submit">Save</button>
+    </form>
+  </div>
+  <aside class="side card"><h2>Requester</h2>
+    <p>{{ r.name or 'No name given' }}<br>{% if r.email %}<a href="mailto:{{ r.email }}">{{ r.email }}</a><br>{% endif %}{{ r.phone or '' }}</p>
+  </aside>
+</div>
+{% endblock %}

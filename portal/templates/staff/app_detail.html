@@ -1,0 +1,25 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/applications">All applications</a></p>
+<h1>{{ a.number }} · {{ a.form }}</h1>
+<div class="split">
+  <div class="main stack">
+    <div class="table-wrap"><table class="data"><caption>Answers</caption><tbody>
+      {% for k, v in a.data.items() %}<tr><th scope="row">{{ k.replace('_', ' ')|capitalize }}</th><td style="white-space: pre-line">{{ v if v is string else v|join(', ') }}</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% if a.uploads %}
+    <section class="card"><h2>Files</h2><ul>
+      {% for u in a.uploads %}<li>{{ u.field }}: {% if u.path %}<a href="/staff/applications/{{ a.number }}/upload/{{ loop.index0 }}">{{ u.name }}</a>{% if u.sensitive %} <span class="pill warn">Sensitive, deleted automatically</span>{% endif %}{% else %}deleted after the retention period{% endif %}</li>{% endfor %}
+    </ul><p class="small muted">Opening a file is recorded in the audit log.</p></section>
+    {% endif %}
+  </div>
+  <form method="post" action="/staff/applications/{{ a.number }}" class="side card" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <div class="field"><label for="status">Status</label><select id="status" name="status">{% for val, lab in statuses %}<option value="{{ val }}"{% if a.status == val %} selected{% endif %}>{{ lab }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="notes">Staff notes</label><textarea id="notes" name="staff_notes" rows="4">{{ a.staff_notes or '' }}</textarea></div>
+    <label class="choice"><input type="checkbox" name="notify"> Email the applicant about this change</label>
+    <div class="field"><label for="message">Message to include (optional)</label><textarea id="message" name="message" rows="3"></textarea></div>
+    <button class="btn" type="submit">Save</button>
+  </form>
+</div>
+{% endblock %}

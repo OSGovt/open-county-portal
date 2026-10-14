@@ -1,0 +1,62 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<h1>Finance</h1>
+<form method="get" action="/staff/finance" class="inline-form card">
+  <div class="field"><label for="start">From</label><input type="date" id="start" name="start" value="{{ d0 }}"></div>
+  <div class="field"><label for="end">Through</label><input type="date" id="end" name="end" value="{{ d1 }}"></div>
+  <button class="btn" type="submit">Show</button>
+</form>
+<p class="cluster" style="margin-top: 1rem">
+  <a class="btn secondary" href="/staff/finance/ledger.csv?start={{ d0 }}&amp;end={{ d1 }}">Download ledger (CSV)</a>
+  <a class="btn secondary" href="/staff/finance/posting.csv?start={{ d0 }}&amp;end={{ d1 }}">Download bill payments to post (CSV)</a>
+</p>
+<section style="margin-top: 1rem">
+  <h2>Collected by office and fund</h2>
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th scope="col">Office</th><th scope="col">Fund</th><th scope="col" class="num">Amount</th></tr></thead>
+    <tbody>{% for office, fund, amt in by_fund %}<tr><td>{{ names.get(office, office) }}</td><td>{{ fund }}</td><td class="num">{{ amt|money }}</td></tr>{% else %}<tr><td colspan="3">Nothing collected in this period.</td></tr>{% endfor %}
+      {% if fees_total %}<tr><td>All offices</td><td>Card processing reimbursement</td><td class="num">{{ fees_total|money }}</td></tr>{% endif %}</tbody>
+  </table></div>
+</section>
+<section style="margin-top: 1.5rem">
+  <h2>By payment type</h2>
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th scope="col">Channel</th><th scope="col">Type</th><th scope="col" class="num">Payments</th><th scope="col" class="num">Amount</th></tr></thead>
+    <tbody>{% for ch, kind, n, amt in by_tender %}<tr><td>{{ ch }}</td><td>{{ kind }}</td><td class="num">{{ n }}</td><td class="num">{{ amt|money }}</td></tr>{% else %}<tr><td colspan="4">None.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+<section style="margin-top: 1.5rem">
+  <h2>Drawers</h2>
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th scope="col">Drawer</th><th scope="col">Opened by</th><th scope="col">Closed</th><th scope="col" class="num">Variance</th></tr></thead>
+    <tbody>{% for d in drawer_rows %}<tr><td>{{ d.drawer_name }}</td><td>{{ d.opened_by }}</td><td>{{ d.closed_at|localtime if d.closed_at else 'Still open' }}</td>
+      <td class="num">{% if d.closed_at %}{% if d.variance_cents %}<span class="pill bad">{{ d.variance_cents|money }}</span>{% else %}<span class="pill ok">Balanced</span>{% endif %}{% endif %}</td></tr>{% else %}<tr><td colspan="4">No drawers in this period.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% if voids %}<section style="margin-top: 1.5rem"><h2>Voided sales</h2><ul>{% for v in voids %}<li>{{ v.number }}, {{ v.total_cents|money }}, by {{ v.staff_user }}</li>{% endfor %}</ul></section>{% endif %}
+<section style="margin-top: 1.5rem" class="split">
+  <div class="main">
+    <h2>Escrow accounts</h2>
+    <p>Prepaid accounts for title companies and law firms, drawn down at the counter.</p>
+    <div class="table-wrap"><table class="data"><thead><tr><th scope="col">Account</th><th scope="col" class="num">Balance</th></tr></thead>
+      <tbody>{% for e in escrows %}<tr><td>{{ e.name }}{% if not e.active %} (closed){% endif %}</td><td class="num">{{ e.balance_cents|money }}</td></tr>{% else %}<tr><td colspan="2">No escrow accounts.</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+  <div class="side stack">
+    <form method="post" action="/staff/finance/escrow" class="card" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="action" value="deposit">
+      <h3>Record a deposit</h3>
+      <div class="field"><label for="ea">Account</label><select id="ea" name="account_id">{% for e in escrows %}<option value="{{ e.id }}">{{ e.name }}</option>{% endfor %}</select></div>
+      <div class="field"><label for="eamt">Amount</label><input type="text" inputmode="decimal" id="eamt" name="amount"></div>
+      <div class="field"><label for="enote">Note</label><input type="text" id="enote" name="note" value="Deposit"></div>
+      <button class="btn" type="submit">Record deposit</button>
+    </form>
+    <form method="post" action="/staff/finance/escrow" class="card" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="action" value="create">
+      <h3>New escrow account</h3>
+      <div class="field"><label for="ename">Account holder</label><input type="text" id="ename" name="name"></div>
+      <div class="field"><label for="eemail">Email</label><input type="email" id="eemail" name="email"></div>
+      <button class="btn secondary" type="submit">Create account</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

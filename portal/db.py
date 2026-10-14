@@ -425,6 +425,22 @@ drawer_sessions = Table(
     Column("close_note", Text),
 )
 
+# Electronic certified copies: each issued PDF gets a verification code and
+# its SHA-256, so anyone can confirm at /verify/<code> that a copy is genuine
+# and unaltered.
+certified_copies = Table(
+    "certified_copies", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("code", String(40), unique=True, nullable=False),
+    Column("order_line_id", Integer, ForeignKey("order_lines.id", ondelete="SET NULL")),
+    Column("instrument_number", String(80), nullable=False),
+    Column("file_id", Integer, ForeignKey("files.id", ondelete="SET NULL")),
+    Column("sha256", String(64), nullable=False),
+    Column("issued_by", String(200), nullable=False),
+    _ts("issued_at", nullable=False, default=utcnow),
+    Column("revoked", Boolean, nullable=False, default=False),
+)
+
 api_keys = Table(
     "api_keys", metadata,
     Column("id", Integer, primary_key=True),

@@ -46,5 +46,5 @@ def summary() -> dict:
         "backup_age_days": backup_age,
         "bulk_generated_at": bulk,
         "email_configured": notify.configured(),
-        "update": _read("last_update.json"),
+        "last_update": _read("last_update.json"),
     }

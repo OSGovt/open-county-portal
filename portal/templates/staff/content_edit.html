@@ -1,0 +1,53 @@
+{% extends "staff/layout.html" %}
+{% from "partials/forms.html" import error_summary %}
+{% block staff %}
+<p><a href="/staff/content/{{ entity }}">{{ ent.title }}</a></p>
+<h1>{{ page_title }}</h1>
+{{ error_summary(errors) }}
+<form method="post" action="/staff/content/{{ entity }}/save" enctype="multipart/form-data" class="card" style="max-width: 48rem" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  {% if key %}<input type="hidden" name="_key" value="{{ key }}">{% endif %}
+  {% for f in fields %}
+  {% set fid = 'f-' ~ f.name %}{% set err = errors.get(f.name) %}{% set v = row.get(f.name) %}
+  {% if f.type == 'bool' %}
+  <div class="field">
+    <label class="choice"><input type="checkbox" name="{{ f.name }}" id="{{ fid }}"{% if v %} checked{% endif %}{% if f.hint %} aria-describedby="{{ fid }}-hint"{% endif %}> {{ f.label }}</label>
+    {% if f.hint %}<span class="hint" id="{{ fid }}-hint">{{ f.hint }}</span>{% endif %}
+  </div>
+  {% else %}
+  <div class="field">
+    <label for="{{ fid }}">{{ f.label }}{% if not f.required %} <span class="hint" style="display: inline">(optional)</span>{% endif %}</label>
+    {% if f.hint %}<span class="hint" id="{{ fid }}-hint">{{ f.hint }}</span>{% endif %}
+    {% if f.type == 'markdown' %}<span class="hint" id="{{ fid }}-md">Formatting: a blank line starts a new paragraph; start lines with "- " for a list or "1. " for numbered steps; [link text](https://address) makes a link; ## makes a heading.</span>{% endif %}
+    {% if err %}<span class="field-error" id="{{ fid }}-err">{{ err }}</span>{% endif %}
+    {% set desc = [] %}{% if f.hint %}{% set _ = desc.append(fid ~ '-hint') %}{% endif %}{% if f.type == 'markdown' %}{% set _ = desc.append(fid ~ '-md') %}{% endif %}{% if err %}{% set _ = desc.append(fid ~ '-err') %}{% endif %}
+    {% set attrs %}id="{{ fid }}" name="{{ f.name }}"{% if desc %} aria-describedby="{{ desc|join(' ') }}"{% endif %}{% if err %} aria-invalid="true"{% endif %}{% endset %}
+    {% if f.type in ('markdown', 'textarea') %}
+    <textarea {{ attrs }} rows="{{ 12 if f.type == 'markdown' else 4 }}">{{ v or '' }}</textarea>
+    {% elif f.type == 'select' %}
+    <select {{ attrs }}>{% for val, lab in f.options %}<option value="{{ val }}"{% if (v or '') == val %} selected{% endif %}>{{ lab }}</option>{% endfor %}</select>
+    {% elif f.type == 'file' %}
+    <input type="file" {{ attrs }}>
+    {% elif f.type == 'datetime' %}
+    <input type="datetime-local" {{ attrs }} value="{{ v or '' }}">
+    {% elif f.type == 'date' %}
+    <input type="date" {{ attrs }} value="{{ v or '' }}">
+    {% elif f.type == 'int' %}
+    <input type="number" {{ attrs }} value="{{ v if v is not none else '' }}" style="max-width: 8rem">
+    {% else %}
+    <input type="text" {{ attrs }} value="{{ v or '' }}">
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endfor %}
+  <div class="cluster"><button class="btn" type="submit">Save</button>
+    {% if key and ent.public %}{% set pub = ent.public.replace('{slug}', row.get('slug') or '').replace('{id}', key|string) %}<a href="{{ pub }}">View on the public site</a>{% endif %}</div>
+</form>
+{% if key and ent.deletable %}
+<form method="post" action="/staff/content/{{ entity }}/{{ key }}/delete" style="margin-top: 1.5rem">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <button class="btn danger" type="submit">Delete this {{ ent.one }}</button>
+  <span class="muted small">Deleting can't be undone, but the change is logged.</span>
+</form>
+{% endif %}
+{% endblock %}

@@ -47,14 +47,27 @@ def create_app() -> FastAPI:
                   description="Free, open API for public records and information published by this jurisdiction. "
                               "No key is required. Heavy users should download the daily bulk files at /api/v1/bulk.")
     limiter = RateLimiter()
+    key_cache: dict = {"at": 0.0, "hashes": set()}
+
+    def _key_ok(key: str) -> bool:
+        """Check an API key against active keys, refreshing the list every minute."""
+        import hashlib
+        from .db import api_keys
+        now = time.monotonic()
+        if now - key_cache["at"] > 60:
+            with get_engine().connect() as conn:
+                key_cache["hashes"] = set(conn.execute(select(api_keys.c.key_hash).where(api_keys.c.active.is_(True))).scalars())
+            key_cache["at"] = now
+        return hashlib.sha256(key.encode()).hexdigest() in key_cache["hashes"]
 
     @app.middleware("http")
     async def security_and_limits(request: Request, call_next):
         path = request.url.path
         if path.startswith("/api/"):
             key_header = request.headers.get("x-api-key")
-            limit = settings.api_rate_per_minute_keyed if key_header else settings.api_rate_per_minute
-            ident = (key_header or "") + "|" + (request.client.host if request.client else "?")
+            valid_key = bool(key_header) and _key_ok(key_header)
+            limit = settings.api_rate_per_minute_keyed if valid_key else settings.api_rate_per_minute
+            ident = (key_header if valid_key else "") + "|" + (request.client.host if request.client else "?")
             if not limiter.allow(ident, limit):
                 return JSONResponse({"error": "rate_limited",
                                      "message": "Too many requests this minute. Wait a minute, request a free API key, "
@@ -68,7 +81,7 @@ def create_app() -> FastAPI:
             # Fonts and stylesheets may come from an https font service chosen in the theme.
             response.headers.setdefault(
                 "Content-Security-Policy",
-                "default-src 'self'; img-src 'self' data:; style-src 'self' https:; font-src 'self' https:; "
+                "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https:; "
                 "script-src 'self'; form-action 'self' https:; frame-ancestors 'none'; base-uri 'self'")
             response.headers.setdefault("X-Frame-Options", "DENY")
         else:

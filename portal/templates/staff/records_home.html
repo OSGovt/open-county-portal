@@ -1,0 +1,18 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<h1>Records</h1>
+<p><a href="/staff/records/redactions">Redaction requests</a> · <a href="/staff/orders">Certified copies</a></p>
+<form method="get" action="/staff/records" class="inline-form card">
+  <div class="field grow"><label for="q">Instrument number or name</label><span class="hint" id="q-hint">Includes restricted records that the public can't see.</span>
+    <input type="search" id="q" name="q" value="{{ q }}" aria-describedby="q-hint"></div>
+  <button class="btn" type="submit">Find</button>
+</form>
+{% if q %}
+<div class="table-wrap" style="margin-top: 1rem"><table class="data">
+  <thead><tr><th scope="col">Instrument</th><th scope="col">Type</th><th scope="col">Recorded</th><th scope="col">Status</th></tr></thead>
+  <tbody>{% for r in rows %}<tr><td><a href="/staff/records/{{ r.instrument_number }}">{{ r.instrument_number }}</a></td><td>{{ r.doc_type }}</td><td>{{ r.recorded_date|longdate }}</td>
+    <td>{% if r.status == 'public' %}<span class="pill ok">Public</span>{% else %}<span class="pill warn">Restricted</span>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="4">No matches.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% endblock %}

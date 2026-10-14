@@ -1,0 +1,22 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<h1>Open a drawer</h1>
+<p>Count the starting cash in the drawer and enter it below. Every sale today will be recorded against this drawer.</p>
+{% if not my_offices %}
+<p class="flash error">Your account isn't assigned to an office yet. Ask an administrator to add your office under Settings, Staff accounts.</p>
+{% else %}
+<form method="post" action="/staff/counter/open" class="card" style="max-width: 32rem" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <fieldset class="field">
+    <legend>Drawer</legend>
+    {% for d in drawers %}<label class="choice"><input type="radio" name="drawer_id" value="{{ d.id }}"{% if loop.first %} checked{% endif %}> {{ d.name }} ({{ d.office_slug }})</label>{% endfor %}
+    <label class="choice"><input type="radio" name="drawer_id" value="new"{% if not drawers %} checked{% endif %}> A new drawer</label>
+  </fieldset>
+  <div class="field"><label for="office">Office, for a new drawer</label>
+    <select id="office" name="office_slug">{% for o in my_offices %}<option value="{{ o }}">{{ o }}</option>{% endfor %}</select></div>
+  <div class="field"><label for="opening">Starting cash</label><span class="hint" id="opening-hint">For example: 200.00</span>
+    <input type="text" id="opening" name="opening" inputmode="decimal" aria-describedby="opening-hint" style="max-width: 12rem"></div>
+  <button class="btn" type="submit">Open drawer</button>
+</form>
+{% endif %}
+{% endblock %}

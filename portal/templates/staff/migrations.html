@@ -1,0 +1,23 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/system">System</a></p>
+<h1>Imports</h1>
+<p>Each import from an old system is a numbered batch. A batch can be checked, signed off, or undone as a whole. Imports are run on the server; see Help, "Moving your records".</p>
+<div class="table-wrap"><table class="data">
+  <thead><tr><th scope="col">Batch</th><th scope="col">Kind</th><th scope="col">Started</th><th scope="col" class="num">Rows in</th><th scope="col" class="num">Loaded</th><th scope="col" class="num">Rejected</th><th scope="col">Status</th><th scope="col">Report and sign-off</th></tr></thead>
+  <tbody>
+  {% for b in rows %}
+  <tr><td>{{ b.id }}</td><td>{{ b.kind }}</td><td>{{ b.started_at|localtime }}</td><td class="num">{{ b.rows_in }}</td><td class="num">{{ b.rows_loaded }}</td><td class="num">{{ b.rows_rejected }}</td>
+    <td>{{ b.status }}{% if b.signed_off_by %}<br><span class="small">by {{ b.signed_off_by }}</span>{% endif %}</td>
+    <td>{% if b.report_path %}<a href="/staff/system/migrations/{{ b.id }}/report">Verification report</a>{% else %}<span class="small muted">Run verify to create a report</span>{% endif %}
+      {% if b.status == 'loaded' %}
+      <form method="post" action="/staff/system/migrations/{{ b.id }}/signoff" style="margin-top: 0.5rem" novalidate>
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <label for="so-{{ b.id }}" class="small">Name and title of the person signing off</label>
+        <input type="text" id="so-{{ b.id }}" name="name">
+        <button class="btn secondary" type="submit" style="margin-top: 0.4rem">Sign off batch {{ b.id }}</button>
+      </form>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="8">No imports yet.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

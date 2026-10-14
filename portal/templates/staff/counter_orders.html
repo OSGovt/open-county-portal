@@ -1,0 +1,19 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<h1>Online orders awaiting payment</h1>
+<p>Residents who chose to pay at the office bring their order number. Take payment here.</p>
+{% if not rows %}<p>No saved orders are waiting.</p>{% endif %}
+<ul class="plain">
+  {% for o in rows %}
+  <li class="card">
+    <p style="margin: 0"><strong>{{ o.number }}</strong> · {{ o.total_cents|money }} · saved {{ o.created_at|localtime }}{% if o.email %} · {{ o.email }}{% endif %}</p>
+    <form method="post" action="/staff/counter/orders/{{ o.number }}/pay" class="inline-form" style="margin-top: 0.5rem">
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <div class="field"><label for="t-{{ o.id }}">Paid by</label><select id="t-{{ o.id }}" name="tender"><option value="cash">Cash</option><option value="check">Check</option><option value="card">Card</option></select></div>
+      <div class="field"><label for="c-{{ o.id }}">Check number</label><input type="text" id="c-{{ o.id }}" name="check_number" style="max-width: 10rem"></div>
+      <button class="btn" type="submit">Mark paid<span class="visually-hidden"> {{ o.number }}</span></button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

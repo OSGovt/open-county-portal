@@ -1,0 +1,26 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<h1>Certified copies</h1>
+<p>{% if show == 'pending' %}Showing copies waiting to be prepared. <a href="/staff/orders?show=all">Show all</a>{% else %}Showing all. <a href="/staff/orders">Show only waiting</a>{% endif %}</p>
+{% if not rows %}<p>Nothing waiting.</p>{% endif %}
+<ul class="plain">
+  {% for r in rows %}{% if r.fee_code and 'Certification' in r.label %}
+  <li class="card">
+    <p style="margin: 0"><strong>{{ r.label }}</strong></p>
+    <p class="muted small" style="margin: 0.25rem 0">Order {{ r.number }} · paid {{ r.paid_at|localtime }} · {{ r.email or 'no email' }} · status {{ r.fulfil_status }}</p>
+    <p><a href="/records/{{ r.ref }}">Open the record</a></p>
+    {% if r.fulfil_status == 'pending' %}
+    <div class="cluster">
+      {% if 'PDF' in r.label %}
+      <form method="post" action="/staff/orders/{{ r.id }}/issue"><input type="hidden" name="_csrf" value="{{ csrf }}">
+        <button class="btn" type="submit">Issue certified PDF and email it<span class="visually-hidden"> for {{ r.ref }}</span></button></form>
+      {% else %}
+      <form method="post" action="/staff/orders/{{ r.id }}/done"><input type="hidden" name="_csrf" value="{{ csrf }}">
+        <button class="btn" type="submit">Mark paper copy mailed or picked up<span class="visually-hidden"> for {{ r.ref }}</span></button></form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </li>
+  {% endif %}{% endfor %}
+</ul>
+{% endblock %}

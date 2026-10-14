@@ -1,0 +1,45 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/settings">Settings</a></p>
+<h1>Payments, records and open data</h1>
+<form method="post" action="/staff/settings/payments" class="card" style="max-width: 46rem" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <h2>Payment processor</h2>
+  <fieldset class="field"><legend>Processor</legend>
+    {% for code, a in adapters.items() %}<label class="choice"><input type="radio" name="processor" value="{{ code }}"{% if p.processor == code %} checked{% endif %}> {{ a.name }}</label>{% endfor %}
+    <span class="hint">A real processor needs an adapter for that company. See the implementer guide, "Connecting a payment processor".</span>
+  </fieldset>
+  <fieldset class="field"><legend>Ways residents can pay online</legend>
+    <label class="choice"><input type="checkbox" name="m_card"{% if 'card' in p.methods %} checked{% endif %}> Credit and debit cards</label>
+    <label class="choice"><input type="checkbox" name="m_wallet"{% if 'wallet' in p.methods %} checked{% endif %}> Apple Pay and Google Pay (if the processor supports them)</label>
+    <label class="choice"><input type="checkbox" name="m_ach"{% if 'ach' in p.methods %} checked{% endif %}> eCheck from a bank account</label>
+  </fieldset>
+  <h2>Processing fees</h2>
+  <p>Enter only what your governing body adopted. Leave at 0 to absorb processing costs.</p>
+  <div class="grid">
+    <div class="field"><label for="cfp">Card fee, percent</label><input type="text" inputmode="decimal" id="cfp" name="card_fee_percent" value="{{ p.card_fee_percent }}"></div>
+    <div class="field"><label for="cff">Card fee, flat amount</label><input type="text" inputmode="decimal" id="cff" name="card_fee_flat" value="{{ '%.2f'|format(p.card_fee_flat_cents / 100) }}"></div>
+    <div class="field"><label for="cfm">Card fee, minimum</label><input type="text" inputmode="decimal" id="cfm" name="card_fee_min" value="{{ '%.2f'|format(p.card_fee_min_cents / 100) }}"></div>
+    <div class="field"><label for="aff">eCheck fee, flat amount</label><input type="text" inputmode="decimal" id="aff" name="ach_fee_flat" value="{{ '%.2f'|format(p.ach_fee_flat_cents / 100) }}"></div>
+  </div>
+  <div class="field"><label for="auth">Authority for the fee (shown at checkout)</label><span class="hint" id="auth-hint">For example: Processing fee set by Commissioners Court Order 2026-114 under Local Government Code 132.003.</span>
+    <input type="text" id="auth" name="fee_authority" value="{{ p.fee_authority }}" aria-describedby="auth-hint"></div>
+  <div class="field"><label for="ps">Processor settings</label><span class="hint" id="ps-hint">Lines of "name: value" from your processor (account ID, keys). Stored privately; never shown again in full.</span>
+    <textarea id="ps" name="processor_settings" rows="4" aria-describedby="ps-hint">{% if p.processor_settings %}(unchanged: {{ p.processor_settings|length }} setting(s) saved){% endif %}</textarea></div>
+  <h3>Merchant account for each office</h3>
+  <p class="small">Each elected office's share of a payment settles to its own account, if your processor supports split settlement.</p>
+  {% for o in office_rows %}<div class="field"><label for="m-{{ o.slug }}">{{ o.name }}</label><input type="text" id="m-{{ o.slug }}" name="merchant_{{ o.slug }}" value="{{ o.merchant_account or '' }}"></div>{% endfor %}
+
+  <h2>Records</h2>
+  <label class="choice"><input type="checkbox" name="free_downloads"{% if r.free_downloads %} checked{% endif %}> Free downloads of uncertified copies</label>
+  <p class="small muted">Turn this off only if your state's law requires a fee for every copy, including online ones. Ask county counsel.</p>
+  <label class="choice"><input type="checkbox" name="show_property_id"{% if r.show_property_id %} checked{% endif %}> Show appraisal district property IDs on record pages</label>
+
+  <h2>Open data</h2>
+  <div class="field"><label for="dt">Data terms (shown on the Open data page and in the catalog)</label><textarea id="dt" name="data_terms" rows="3">{{ od.data_terms }}</textarea></div>
+  <div class="field"><label for="lu">License address (optional)</label><span class="hint" id="lu-hint">For a public-domain dedication: https://creativecommons.org/publicdomain/zero/1.0/</span><input type="text" id="lu" name="license_url" value="{{ od.license_url }}" aria-describedby="lu-hint"></div>
+  <div class="field"><label for="cn">Open data contact name</label><input type="text" id="cn" name="contact_name" value="{{ od.contact_name }}"></div>
+  <div class="field"><label for="ce">Open data contact email (required by Data.gov)</label><input type="email" id="ce" name="contact_email" value="{{ od.contact_email }}"></div>
+  <button class="btn" type="submit">Save</button>
+</form>
+{% endblock %}

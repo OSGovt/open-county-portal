@@ -110,7 +110,8 @@ def page_image(number: str, seq: int):
         if not match:
             raise HTTPException(404)
         data = img.cached_page(match[0], rec_mod.marks_for(conn, match[0]["id"]))
-    return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=3600"})
+    # Short cache: if staff add a redaction, the page must stop showing the old image quickly.
+    return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=300"})
 
 
 @router.get("/records/{number}/download.pdf", include_in_schema=False)
@@ -138,6 +139,32 @@ def download_pdf(number: str):
     data = img.assemble_pdf(pngs, cover)
     return Response(data, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="{number}.pdf"'})
+
+
+@router.get("/verify/{code}", include_in_schema=False)
+def verify_certified(request: Request, code: str):
+    """Anyone holding a certified PDF can confirm it is genuine and unaltered."""
+    from sqlalchemy import select
+    from ..db import certified_copies
+    with get_engine().connect() as conn:
+        c = conn.execute(select(certified_copies).where(certified_copies.c.code == code.upper())).mappings().first()
+        return render(request, "public/verify.html", conn, status_code=200 if c else 404,
+                      page_title="Verify a certified copy", c=c, code=code.upper())
+
+
+@router.get("/verify/{code}/download", include_in_schema=False)
+def download_certified(code: str):
+    from fastapi.responses import FileResponse
+    from sqlalchemy import select
+    from ..db import certified_copies, files
+    from ..settings import get_settings
+    with get_engine().connect() as conn:
+        c = conn.execute(select(certified_copies, files.c.path, files.c.name)
+                         .select_from(certified_copies.join(files, files.c.id == certified_copies.c.file_id))
+                         .where(certified_copies.c.code == code.upper(), certified_copies.c.revoked.is_(False))).mappings().first()
+    if c is None:
+        raise HTTPException(404)
+    return FileResponse(get_settings().files_dir / c["path"], media_type="application/pdf", filename=c["name"])
 
 
 @router.post("/records/{number}/accessible-version", include_in_schema=False, dependencies=[Depends(verify_csrf)])

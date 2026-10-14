@@ -1,0 +1,44 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<h1>Close drawer</h1>
+{% if sess %}
+<div class="split">
+  <section class="main card">
+    <h2>{{ sess.drawer_name }}, opened {{ sess.opened_at|localtime }}</h2>
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th scope="col">Payment type</th><th scope="col" class="num">Sales</th><th scope="col" class="num">Amount</th></tr></thead>
+      <tbody>{% for kind, n, total in summary %}<tr><td>{{ kind }}</td><td class="num">{{ n }}</td><td class="num">{{ total|money }}</td></tr>{% else %}<tr><td colspan="3">No sales yet.</td></tr>{% endfor %}</tbody>
+    </table></div>
+    <p style="margin-top: 1rem">Starting cash {{ sess.opening_cash_cents|money }}. <strong>Cash expected in the drawer: {{ expected|money }}</strong>.</p>
+    <form method="post" action="/staff/counter/close" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <div class="field"><label for="counted">Cash you counted</label><input type="text" inputmode="decimal" id="counted" name="counted" style="max-width: 12rem"></div>
+      <div class="field"><label for="note">Note (optional)</label><textarea id="note" name="note" rows="2"></textarea></div>
+      <button class="btn" type="submit">Close drawer</button>
+    </form>
+  </section>
+  {% if can('supervisor') %}
+  <section class="side card">
+    <h2>Void a sale</h2>
+    <p class="small">Supervisors only. Return any cash to the customer.</p>
+    <form method="post" action="/staff/counter/void" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <div class="field"><label for="vnum">Order number</label><input type="text" id="vnum" name="number"></div>
+      <div class="field"><label for="vreason">Reason</label><input type="text" id="vreason" name="reason"></div>
+      <button class="btn danger" type="submit">Void sale</button>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% else %}
+<p>You don't have a drawer open. <a href="/staff/counter">Go to the counter</a>.</p>
+{% endif %}
+<section style="margin-top: 1.5rem">
+  <h2>Recently closed drawers</h2>
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th scope="col">Drawer</th><th scope="col">Closed</th><th scope="col">By</th><th scope="col" class="num">Expected</th><th scope="col" class="num">Counted</th><th scope="col" class="num">Variance</th></tr></thead>
+    <tbody>{% for r in recent %}<tr><td>{{ r.drawer_name }}</td><td>{{ r.closed_at|localtime }}</td><td>{{ r.closed_by }}</td><td class="num">{{ r.expected_cash_cents|money }}</td><td class="num">{{ r.counted_cash_cents|money }}</td>
+      <td class="num">{% if r.variance_cents %}<span class="pill bad">{{ r.variance_cents|money }}</span>{% else %}<span class="pill ok">Balanced</span>{% endif %}</td></tr>{% else %}<tr><td colspan="6">None yet.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endblock %}

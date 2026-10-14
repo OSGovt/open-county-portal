@@ -1,0 +1,13 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<h1>Public information requests</h1>
+<p>{% if status == 'open' %}Open requests, oldest first. <a href="/staff/pia?status=all">Show all</a>{% else %}All requests. <a href="/staff/pia">Show open only</a>{% endif %}</p>
+<div class="table-wrap"><table class="data">
+  <thead><tr><th scope="col">Request</th><th scope="col">Received</th><th scope="col">Office</th><th scope="col">Status</th><th scope="col">Summary</th></tr></thead>
+  <tbody>{% for r in rows %}
+    <tr><td><a href="/staff/pia/{{ r.number }}">{{ r.number }}</a></td><td>{{ r.received_at|localtime }}</td><td>{{ r.office_slug or 'Not sure' }}</td>
+      <td>{{ labels.get(r.status, r.status) }}</td><td>{{ r.description[:120] }}</td></tr>
+  {% else %}<tr><td colspan="5">No requests.</td></tr>{% endfor %}</tbody>
+</table></div>
+<p class="small muted" style="margin-top: 1rem">Business-day deadlines depend on holidays your office observes; check each request against your public information officer's calendar.</p>
+{% endblock %}

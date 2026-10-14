@@ -1,0 +1,11 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/records">Records</a></p>
+<h1>Redaction requests</h1>
+<p>Requests from protected people to hide personal details in the online records. Verify eligibility, then mark each affected page.</p>
+<div class="table-wrap"><table class="data">
+  <thead><tr><th scope="col">Request</th><th scope="col">Received</th><th scope="col">Requester</th><th scope="col">Group</th><th scope="col">Status</th></tr></thead>
+  <tbody>{% for r in rows %}<tr><td><a href="/staff/records/redactions/{{ r.number }}">{{ r.number }}</a></td><td>{{ r.received_at|localtime }}</td><td>{{ r.requester_name }}</td><td>{{ r.category }}</td><td>{{ labels.get(r.status, r.status) }}</td></tr>
+  {% else %}<tr><td colspan="5">No requests.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

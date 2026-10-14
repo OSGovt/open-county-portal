@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block head %}<link rel="stylesheet" href="/staff/settings/theme/preview.css"><meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<p class="banner"><strong>Preview only.</strong> This is how the proposed theme looks. <a href="/staff/settings/theme">Back to the theme editor</a> to publish or change it.</p>
+<h1>Sample page heading</h1>
+<p>Body text looks like this, with <a href="#main">a link</a> and <span class="muted">secondary text</span>.</p>
+<div class="grid">
+  <a class="tile" href="#main"><strong>Search property records</strong><span>Deeds, liens and plats</span></a>
+  <a class="tile" href="#main"><strong>Pay property tax</strong><span>Full or partial payment</span></a>
+</div>
+<div class="card" style="margin-top: 1rem">
+  <div class="field"><label for="p1">A text field</label><span class="hint">With a hint underneath the label</span><input type="text" id="p1"></div>
+  <div class="field"><label for="p2">A field with an error</label><span class="field-error">This is how errors look.</span><input type="text" id="p2" aria-invalid="true"></div>
+  <div class="cluster"><button class="btn" type="button">Main button</button><button class="btn secondary" type="button">Second button</button></div>
+</div>
+<p class="flash success">This is a confirmation message.</p>
+<div class="banner" style="margin-top: 1rem"><strong>This is an alert.</strong> It appears at the top of every page.</div>
+<p style="margin-top: 1rem">Press Tab to see the keyboard focus ring move through the links and buttons.</p>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<h1>Applications</h1>
+<form method="get" action="/staff/applications" class="inline-form card">
+  <div class="field"><label for="status">Status</label><select id="status" name="status"><option value="all">All</option>{% for val, lab in statuses %}<option value="{{ val }}"{% if status == val %} selected{% endif %}>{{ lab }}</option>{% endfor %}</select></div>
+  <div class="field"><label for="form">Form</label><select id="form" name="form"><option value="">All forms</option>{% for f in forms %}<option value="{{ f }}"{% if form == f %} selected{% endif %}>{{ f }}</option>{% endfor %}</select></div>
+  <button class="btn secondary" type="submit">Show</button>
+</form>
+<div class="table-wrap" style="margin-top: 1rem"><table class="data">
+  <thead><tr><th scope="col">Number</th><th scope="col">Form</th><th scope="col">Received</th><th scope="col">Status</th><th scope="col">Email</th></tr></thead>
+  <tbody>{% for a in rows %}<tr><td><a href="/staff/applications/{{ a.number }}">{{ a.number }}</a></td><td>{{ a.form }}</td><td>{{ a.created_at|localtime }}</td><td>{{ a.status }}</td><td>{{ a.email or '' }}</td></tr>
+  {% else %}<tr><td colspan="5">Nothing here.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

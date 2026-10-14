@@ -1,0 +1,59 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/content">Content</a></p>
+<h1>Fee schedule</h1>
+<p>Every amount on the site, at the counter, and on receipts comes from this table. Fees are never edited in place: a change is scheduled with the date it takes effect and the order that adopted it, so the history is always kept.</p>
+<section>
+  <h2>Current fees</h2>
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th scope="col">Fee</th><th scope="col">Office</th><th scope="col" class="num">Amount</th><th scope="col">Authority</th><th scope="col">Confirmed</th></tr></thead>
+    <tbody>
+    {% for f in current %}
+      <tr>
+        <td>{{ f.label }}<br><span class="muted small">code {{ f.code }} · per {{ f.unit }} · {{ f.fund }}</span></td>
+        <td>{{ names.get(f.office_slug, f.office_slug) }}</td>
+        <td class="num">{{ f.amount_cents|money }}</td>
+        <td>{{ f.statute or '' }}{% if f.adopted_by %}<br><span class="muted small">{{ f.adopted_by }}</span>{% endif %}<br><span class="muted small">since {{ f.effective_from|longdate }}</span></td>
+        <td>{% if f.confirmed %}<span class="pill ok">Confirmed</span>{% else %}
+          <form method="post" action="/staff/content/fees" novalidate>
+            <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="action" value="confirm"><input type="hidden" name="fee_id" value="{{ f.id }}">
+            <label for="ad-{{ f.id }}" class="small">Adopted by (order or resolution)</label>
+            <input type="text" id="ad-{{ f.id }}" name="adopted_by">
+            <button class="btn secondary" type="submit" style="margin-top: 0.4rem">Confirm<span class="visually-hidden"> {{ f.label }}</span></button>
+          </form>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% if upcoming %}
+<section style="margin-top: 1.5rem"><h2>Scheduled changes</h2>
+  <ul>{% for f in upcoming %}<li>{{ f.label }} ({{ f.code }}): {{ f.amount_cents|money }} starting {{ f.effective_from|longdate }} · {{ f.adopted_by }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+<div class="split" style="margin-top: 1.5rem">
+  <form method="post" action="/staff/content/fees" class="main card" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="action" value="schedule">
+    <h2>Schedule a change to an existing fee</h2>
+    <div class="field"><label for="s-code">Fee</label><select id="s-code" name="code">{% for f in current %}<option value="{{ f.code }}">{{ f.label }} ({{ f.code }})</option>{% endfor %}</select></div>
+    <div class="field"><label for="s-amount">New amount</label><input type="text" inputmode="decimal" id="s-amount" name="amount" style="max-width: 10rem"></div>
+    <div class="field"><label for="s-from">Takes effect on</label><input type="date" id="s-from" name="effective_from"></div>
+    <div class="field"><label for="s-adopted">Adopted by (order or resolution)</label><input type="text" id="s-adopted" name="adopted_by"></div>
+    <button class="btn" type="submit">Schedule change</button>
+  </form>
+  <form method="post" action="/staff/content/fees" class="side card" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="action" value="new">
+    <h2>Add a new fee</h2>
+    <div class="field"><label for="n-label">Name</label><input type="text" id="n-label" name="label"></div>
+    <div class="field"><label for="n-code">Fee code</label><span class="hint" id="n-code-hint">Lowercase, numbers and underscores: plat_copy_large</span><input type="text" id="n-code" name="code" aria-describedby="n-code-hint"></div>
+    <div class="field"><label for="n-office">Office</label><select id="n-office" name="office_slug">{% for val, lab in offices %}<option value="{{ val }}">{{ lab }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="n-amount">Amount</label><input type="text" inputmode="decimal" id="n-amount" name="amount"></div>
+    <div class="field"><label for="n-unit">Charged per</label><input type="text" id="n-unit" name="unit" value="each"></div>
+    <div class="field"><label for="n-statute">Statute or authority</label><input type="text" id="n-statute" name="statute"></div>
+    <div class="field"><label for="n-fund">Fund</label><input type="text" id="n-fund" name="fund" value="General Fund"></div>
+    <div class="field"><label for="n-from">Takes effect on</label><input type="date" id="n-from" name="effective_from"></div>
+    <div class="field"><label for="n-adopted">Adopted by</label><input type="text" id="n-adopted" name="adopted_by"></div>
+    <button class="btn secondary" type="submit">Add fee</button>
+  </form>
+</div>
+{% endblock %}

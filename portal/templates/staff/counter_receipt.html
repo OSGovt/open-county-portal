@@ -1,0 +1,18 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<div style="max-width: 32rem">
+  <h1>Receipt {{ o.number }}</h1>
+  <p>{{ site.jurisdiction_name }}<br>{{ o.created_at|localtime }}{% if o.staff_user %} · {{ o.staff_user }}{% endif %}</p>
+  {% if o.reference %}<p>Reference: {{ o.reference }}</p>{% endif %}
+  <table class="data">
+    <tbody>
+      {% for l in o.lines %}<tr><td>{{ l.label }}{% if l.qty > 1 %} ({{ l.qty }} × {{ l.unit_cents|money }}){% endif %}<br><span class="small muted">{{ names.get(l.office_slug, l.office_slug) }}{% if l.statute %} · {{ l.statute }}{% endif %}</span></td><td class="num">{{ l.amount_cents|money }}</td></tr>{% endfor %}
+      {% if o.fee_cents %}<tr><td>Card processing fee</td><td class="num">{{ o.fee_cents|money }}</td></tr>{% endif %}
+      <tr><th scope="row">Total</th><td class="num"><strong>{{ o.total_cents|money }}</strong></td></tr>
+    </tbody>
+  </table>
+  {% for t in o.tenders %}<p>Paid by {{ t.kind }}{% if t.detail %}: {{ t.detail }}{% endif %}</p>{% endfor %}
+  <p>Status: {{ o.status }}</p>
+  <p class="no-print"><a class="btn" href="/staff/counter">Back to the counter</a> <span class="muted">Use your browser's Print command (Ctrl+P) to print this receipt.</span></p>
+</div>
+{% endblock %}

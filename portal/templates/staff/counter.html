@@ -1,0 +1,86 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<div class="cluster" style="justify-content: space-between">
+  <h1 style="margin: 0">Counter</h1>
+  <p style="margin: 0">{{ sess.drawer_name }} · {{ sess.office_slug }} · opened {{ sess.opened_at|localtime }} · <a href="/staff/counter/close">Close drawer</a> · <a href="/staff/counter/orders">Saved online orders</a></p>
+</div>
+{% if last %}
+<p class="flash success">Last sale {{ last.number }}: {{ last.total|money }}{% if last.change %} · <strong>Change due {{ last.change|money }}</strong>{% endif %} · <a href="/staff/counter/receipt/{{ last.number }}">Print receipt</a></p>
+{% endif %}
+<div class="pos" style="margin-top: 1rem">
+  <section class="card" aria-labelledby="fees-h">
+    <h2 id="fees-h">Add a fee</h2>
+    <form method="get" action="/staff/counter" class="inline-form" style="margin-bottom: 0.75rem">
+      <div class="field grow"><label for="q">Find a fee</label><input type="search" id="q" name="q" value="{{ q }}"></div>
+      <button class="btn secondary" type="submit">Find</button>
+    </form>
+    <ul class="plain">
+      {% for f in fees %}
+      <li>
+        <form method="post" action="/staff/counter/add" class="cluster" style="justify-content: space-between">
+          <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="kind" value="fee"><input type="hidden" name="fee_code" value="{{ f.code }}">
+          <span style="flex: 1 1 12rem"><strong>{{ f.label }}</strong><br><span class="muted small">{{ f.amount_cents|money }} per {{ f.unit }} · {{ f.statute or '' }}</span></span>
+          <label class="visually-hidden" for="qty-{{ f.code }}">Quantity of {{ f.label }}</label>
+          <input type="number" id="qty-{{ f.code }}" name="qty" value="1" min="1" style="width: 5rem; min-height: 44px">
+          <button class="btn secondary" type="submit">Add<span class="visually-hidden"> {{ f.label }}</span></button>
+        </form>
+      </li>
+      {% else %}<li class="muted">No fees match.</li>{% endfor %}
+    </ul>
+    <h2 style="margin-top: 1.25rem">Take a bill payment</h2>
+    <form method="get" action="/staff/counter" class="inline-form">
+      <div class="field grow"><label for="bill">Account, name or address</label><input type="search" id="bill" name="bill" value="{{ bill }}"></div>
+      <button class="btn secondary" type="submit">Look up</button>
+    </form>
+    {% for b in bills %}
+    <form method="post" action="/staff/counter/add" class="card" style="margin-top: 0.5rem">
+      <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="kind" value="receivable"><input type="hidden" name="receivable_id" value="{{ b.id }}">
+      <p style="margin: 0"><strong>{{ b.account }}</strong> · {{ b.name or '' }} · due {{ b.amount_due_cents|money }}</p>
+      <div class="inline-form"><div class="field grow"><label for="amt-{{ b.id }}">Amount (blank = full balance)</label><input type="text" inputmode="decimal" id="amt-{{ b.id }}" name="amount"></div>
+        <button class="btn secondary" type="submit">Add</button></div>
+    </form>
+    {% endfor %}
+  </section>
+
+  <section class="card" aria-labelledby="sale-h">
+    <h2 id="sale-h">Current sale</h2>
+    {% for p in priced.problems %}<p class="flash warning">{{ p }}</p>{% endfor %}
+    {% if not priced.lines %}<p class="muted">Nothing added yet.</p>{% endif %}
+    <ul class="plain">
+      {% for l in priced.lines %}
+      <li class="cluster" style="justify-content: space-between; border-bottom: 1px solid var(--c-rule); padding-bottom: 0.5rem">
+        <span style="flex: 1 1 12rem">{{ l.label }}{% if l.qty > 1 %} ({{ l.qty }} × {{ l.unit_cents|money }}){% endif %}<br><span class="muted small">{{ l.fund }}</span></span>
+        <strong class="num">{{ l.amount_cents|money }}</strong>
+        <form method="post" action="/staff/counter/remove"><input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="item_id" value="{{ l.item_id }}">
+          <button class="linkbutton" type="submit">Remove<span class="visually-hidden"> {{ l.label }}</span></button></form>
+      </li>
+      {% endfor %}
+    </ul>
+    <div class="totals" style="margin-top: 0.75rem"><span class="grand">Total</span><span class="grand num">{{ priced.subtotal|money }}</span></div>
+    {% if priced.lines %}<form method="post" action="/staff/counter/clear" style="margin-top: 0.5rem"><input type="hidden" name="_csrf" value="{{ csrf }}"><button class="btn danger" type="submit">Clear sale</button></form>{% endif %}
+  </section>
+
+  <section class="card" aria-labelledby="tender-h">
+    <h2 id="tender-h">Take payment</h2>
+    <form method="post" action="/staff/counter/complete" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <div class="field"><label for="reference">Reference (instrument, case or customer name)</label>
+        <input type="text" id="reference" name="reference" value="{{ reference }}"></div>
+      <fieldset class="field">
+        <legend>Payment method</legend>
+        <label class="choice"><input type="radio" name="tender" value="cash" checked> Cash</label>
+        <label class="choice"><input type="radio" name="tender" value="check"> Check or money order</label>
+        <label class="choice"><input type="radio" name="tender" value="card"> Card on the terminal{% if card_fee %} (adds {{ card_fee_label }} {{ card_fee|money }}){% endif %}</label>
+        {% if escrows %}<label class="choice"><input type="radio" name="tender" value="escrow"> Escrow account</label>{% endif %}
+      </fieldset>
+      <div class="field"><label for="cash_given">Cash given (for cash)</label><input type="text" inputmode="decimal" id="cash_given" name="cash_given" style="max-width: 12rem"></div>
+      <div class="field"><label for="check_number">Check number (for checks)</label><input type="text" id="check_number" name="check_number" style="max-width: 12rem"></div>
+      {% if escrows %}
+      <div class="field"><label for="escrow_id">Escrow account (for escrow)</label>
+        <select id="escrow_id" name="escrow_id"><option value="">Choose</option>{% for e in escrows %}<option value="{{ e.id }}">{{ e.name }} ({{ e.balance_cents|money }})</option>{% endfor %}</select></div>
+      {% endif %}
+      <button class="btn" type="submit" style="width: 100%; font-size: 1.15rem">Complete sale</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

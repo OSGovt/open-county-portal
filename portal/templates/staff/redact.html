@@ -1,0 +1,61 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/records/{{ r.instrument_number }}">{{ r.doc_type }} {{ r.instrument_number }}</a></p>
+<h1>Redact page {{ image.seq }} of {{ r.images|length }}</h1>
+<p>The original image is never changed. Each box you add is painted black on the public copy, and every box is logged.</p>
+<div class="split">
+  <section class="main">
+    <h2>Original (staff only)</h2>
+    <p class="small muted">With a mouse, drag across the area to hide and the box numbers fill in. Or type the numbers.</p>
+    <img id="redact-image" class="page-image" src="/staff/records/{{ r.instrument_number }}/pages/{{ image.seq }}/original.png" alt="Original scanned page {{ image.seq }}, shown to staff only" style="cursor: crosshair; touch-action: none">
+    <h2 style="margin-top: 1rem">Public copy</h2>
+    <img class="page-image" src="/records/{{ r.instrument_number }}/pages/{{ image.seq }}.png?v={{ marks|length }}-{{ image.updated_at.timestamp()|int }}" alt="Public copy of page {{ image.seq }} with redactions applied">
+  </section>
+  <section class="side stack">
+    <form method="post" action="/staff/records/{{ r.instrument_number }}/pages/{{ image.seq }}/marks" class="card" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="units" value="percent">
+      <h2>Add a redaction box</h2>
+      <p class="small">Numbers are percentages of the page: 0 is the left or top edge, 100 the right or bottom.</p>
+      <div class="grid" style="grid-template-columns: repeat(2, minmax(0, 1fr))">
+        <div class="field"><label for="mark-x">From left (%)</label><input type="text" inputmode="decimal" id="mark-x" name="x"></div>
+        <div class="field"><label for="mark-y">From top (%)</label><input type="text" inputmode="decimal" id="mark-y" name="y"></div>
+        <div class="field"><label for="mark-w">Width (%)</label><input type="text" inputmode="decimal" id="mark-w" name="w"></div>
+        <div class="field"><label for="mark-h">Height (%)</label><input type="text" inputmode="decimal" id="mark-h" name="h"></div>
+      </div>
+      <div class="field"><label for="mark-reason">Reason</label><span class="hint" id="mark-reason-hint">For example: Social Security number; residence address, Property Code 11.008</span>
+        <input type="text" id="mark-reason" name="reason" aria-describedby="mark-reason-hint"></div>
+      <div class="field"><label for="mark-req">For request (optional)</label>
+        <select id="mark-req" name="request_id"><option value="">Not tied to a request</option>{% for q in requests_open %}<option value="{{ q.id }}">{{ q.number }}, {{ q.requester_name }}</option>{% endfor %}</select></div>
+      <button class="btn" type="submit">Add redaction</button>
+    </form>
+    <section class="card">
+      <h2>Find Social Security numbers</h2>
+      {% if not ocr %}<p>Text reading (Tesseract) isn't installed on this server.</p>
+      {% elif not scanned %}<p><a class="btn secondary" href="?scan=1">Scan this page</a></p>
+      {% elif not suggestions %}<p>Nothing that looks like a Social Security number was found. Still check the page yourself.</p>
+      {% else %}
+      <p>Review each suggestion against the original before adding it.</p>
+      <ul class="plain">{% for s in suggestions %}
+        <li><form method="post" action="/staff/records/{{ r.instrument_number }}/pages/{{ image.seq }}/marks">
+          <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="units" value="permille">
+          {% for k in ('x', 'y', 'w', 'h') %}<input type="hidden" name="{{ k }}" value="{{ s[k] }}">{% endfor %}
+          <input type="hidden" name="reason" value="{{ s.label }}">
+          <span>{{ s.label }}: {{ s.text[:3] }}…</span> <button class="btn secondary" type="submit">Hide it<span class="visually-hidden"> ({{ s.label }})</span></button></form></li>
+      {% endfor %}</ul>
+      {% endif %}
+    </section>
+    <section class="card">
+      <h2>Boxes on this page ({{ marks|length }})</h2>
+      <ul class="plain">{% for m in marks %}
+        <li><form method="post" action="/staff/records/{{ r.instrument_number }}/pages/{{ image.seq }}/marks/{{ m.id }}/delete">
+          <input type="hidden" name="_csrf" value="{{ csrf }}">{{ m.reason }} <span class="muted small">by {{ m.created_by }}</span>
+          <button class="linkbutton" type="submit">Remove<span class="visually-hidden"> {{ m.reason }}</span></button></form></li>
+      {% else %}<li>None.</li>{% endfor %}</ul>
+    </section>
+    <nav class="pager" aria-label="Pages">
+      {% if image.seq > 1 %}<a class="btn secondary" href="/staff/records/{{ r.instrument_number }}/pages/{{ image.seq - 1 }}/redact">Previous page</a>{% endif %}
+      {% if image.seq < r.images|length %}<a class="btn secondary" href="/staff/records/{{ r.instrument_number }}/pages/{{ image.seq + 1 }}/redact">Next page</a>{% endif %}
+    </nav>
+  </section>
+</div>
+{% endblock %}

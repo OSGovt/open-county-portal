@@ -1,0 +1,20 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/settings">Settings</a></p>
+<h1>API keys</h1>
+<p>The open data API needs no key. A free key only raises the rate limit for researchers, journalists and other heavy users. Keys never unlock non-public data.</p>
+{% if new_key %}<div class="banner" role="alert"><strong>Copy this key now; it is shown only once:</strong> <code style="font-size: 1.1rem">{{ new_key }}</code><br>The user sends it in an <code>X-API-Key</code> header.</div>{% endif %}
+<div class="table-wrap" style="margin-top: 1rem"><table class="data">
+  <thead><tr><th scope="col">Label</th><th scope="col">Email</th><th scope="col">Created</th><th scope="col">Status</th></tr></thead>
+  <tbody>{% for k in rows %}<tr><td>{{ k.label }}</td><td>{{ k.email or '' }}</td><td>{{ k.created_at|localtime }}</td>
+    <td>{% if k.active %}<form method="post" action="/staff/settings/api-keys"><input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="action" value="revoke"><input type="hidden" name="key_id" value="{{ k.id }}"><button class="linkbutton" type="submit">Revoke<span class="visually-hidden"> {{ k.label }}</span></button></form>{% else %}Revoked{% endif %}</td></tr>
+  {% else %}<tr><td colspan="4">No keys issued.</td></tr>{% endfor %}</tbody>
+</table></div>
+<form method="post" action="/staff/settings/api-keys" class="card" style="margin-top: 1rem; max-width: 32rem" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="action" value="create">
+  <h2>Issue a key</h2>
+  <div class="field"><label for="kl">Who it's for</label><input type="text" id="kl" name="label"></div>
+  <div class="field"><label for="ke">Their email</label><input type="email" id="ke" name="email"></div>
+  <button class="btn" type="submit">Issue key</button>
+</form>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<h1>Content</h1>
+<ul class="grid plain">
+  {% for key, ent in entities.items() %}<li style="margin: 0"><a class="tile" href="/staff/content/{{ key }}"><strong>{{ ent.title }}</strong><span>Add or change {{ ent.title|lower }}</span></a></li>{% endfor %}
+  {% if can('admin', 'finance') %}<li style="margin: 0"><a class="tile" href="/staff/content/fees"><strong>Fee schedule</strong><span>Confirm fees and schedule changes</span></a></li>{% endif %}
+</ul>
+{% if draft_pages %}
+<section style="margin-top: 1.5rem">
+  <h2>Pages waiting for review</h2>
+  <p>Pages brought over from the old website start unpublished. Read each one, fix anything out of date, then publish it.</p>
+  <ul>{% for p in draft_pages %}<li><a href="/staff/content/pages/{{ p.id }}/edit">{{ p.title }}</a>{% if p.source_url %} <span class="muted small">from {{ p.source_url }}</span>{% endif %}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+{% endblock %}

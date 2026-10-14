@@ -1,0 +1,21 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/content">Content</a></p>
+<div class="cluster" style="justify-content: space-between">
+  <h1 style="margin: 0">{{ ent.title }}</h1>
+  <a class="btn" href="/staff/content/{{ entity }}/new">Add a {{ ent.one }}</a>
+</div>
+<div class="table-wrap" style="margin-top: 1rem">
+  <table class="data">
+    <thead><tr>{% for c in ent.list %}<th scope="col">{{ c.replace('_', ' ')|capitalize }}</th>{% endfor %}<th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        {% for c in ent.list %}<td>{% set v = r[c] %}{% if v is sameas true %}Yes{% elif v is sameas false %}No{% elif v.__class__.__name__ == 'datetime' %}{{ v|localtime }}{% else %}{{ v if v is not none else '' }}{% endif %}</td>{% endfor %}
+        <td><a href="/staff/content/{{ entity }}/{{ r[ent.key] }}/edit">Edit<span class="visually-hidden"> {{ r[ent.list[0]] }}</span></a></td>
+      </tr>
+      {% else %}<tr><td colspan="{{ ent.list|length + 1 }}">Nothing here yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

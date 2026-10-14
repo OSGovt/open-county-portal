@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width: 44rem" class="stack">
+  <h1>Verify a certified copy</h1>
+  {% if c and not c.revoked %}
+  <div class="flash success">Code {{ code }} is a genuine certified copy issued by {{ site.jurisdiction_name }}.</div>
+  <div class="table-wrap"><table class="data"><tbody>
+    <tr><th scope="row">Instrument</th><td><a href="/records/{{ c.instrument_number }}">{{ c.instrument_number }}</a></td></tr>
+    <tr><th scope="row">Issued</th><td>{{ c.issued_at|localtime }}</td></tr>
+    <tr><th scope="row">SHA-256 of the issued PDF</th><td><code style="word-break: break-all">{{ c.sha256 }}</code></td></tr>
+  </tbody></table></div>
+  <p>To confirm a PDF you were given is unaltered, compute its SHA-256 checksum and compare it with the value above. On Windows: <code>certutil -hashfile file.pdf SHA256</code>. On a Mac or Linux: <code>shasum -a 256 file.pdf</code>.</p>
+  <p><a class="btn secondary" href="/verify/{{ code }}/download">Download the certified copy</a></p>
+  {% elif c and c.revoked %}
+  <p class="flash error">Certified copy {{ code }} was revoked by the issuing office. Contact the County Clerk.</p>
+  {% else %}
+  <p class="flash error">No certified copy has the code {{ code }}. Check the code, or contact the County Clerk.</p>
+  {% endif %}
+</div>
+{% endblock %}

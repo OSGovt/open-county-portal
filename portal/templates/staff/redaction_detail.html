@@ -1,0 +1,27 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<p><a href="/staff/records/redactions">All redaction requests</a></p>
+<h1>{{ r.number }}: {{ r.requester_name }}</h1>
+<div class="split">
+  <div class="main stack">
+    <section class="card"><h2>Request</h2>
+      <p><strong>Group:</strong> {{ r.category }}</p>
+      <p><strong>Names to search:</strong></p><p style="white-space: pre-line">{{ r.search_names }}</p>
+      {% if r.details %}<p><strong>Details:</strong> {{ r.details }}</p>{% endif %}
+      <p class="muted small">Contact: {{ r.email or '' }} {{ r.phone or '' }}</p>
+    </section>
+    <section class="card"><h2>Records naming this person ({{ matches|length }})</h2>
+      <p>Open each page and hide the protected details. Choose this request in the redaction form so the work is tied to it.</p>
+      <ul>{% for m in matches %}<li><a href="/staff/records/{{ m.instrument_number }}">{{ m.doc_type }} {{ m.instrument_number }}</a>, {{ m.recorded_date|longdate }}</li>{% else %}<li>No matches found for these names.</li>{% endfor %}</ul>
+      <p class="small muted">{{ marks|length }} redaction box(es) are tied to this request.</p>
+    </section>
+  </div>
+  <form method="post" action="/staff/records/redactions/{{ r.number }}" class="side card" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <div class="field"><label for="status">Decision</label><select id="status" name="status">{% for val, lab in statuses %}<option value="{{ val }}"{% if r.status == val %} selected{% endif %}>{{ lab }}</option>{% endfor %}</select>
+      <span class="hint">"Rescinded" removes every redaction box tied to this request.</span></div>
+    <div class="field"><label for="notes">Notes</label><textarea id="notes" name="notes" rows="5">{{ r.notes or '' }}</textarea></div>
+    <button class="btn" type="submit">Save decision</button>
+  </form>
+</div>
+{% endblock %}

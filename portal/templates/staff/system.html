@@ -1,0 +1,26 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<h1>System</h1>
+<ul class="grid plain">
+  <li style="margin: 0"><a class="tile" href="/staff/system/golive"><strong>Go-live checklist</strong><span>Everything that must be true before switching over</span></a></li>
+  <li style="margin: 0"><a class="tile" href="/staff/system/migrations"><strong>Imports</strong><span>Records and bills brought from old systems; sign-off</span></a></li>
+  <li style="margin: 0"><a class="tile" href="/staff/system/audit"><strong>Audit log</strong><span>Who did what, and when</span></a></li>
+  <li style="margin: 0"><a class="tile" href="/staff/help"><strong>Help</strong><span>The administrator's guide</span></a></li>
+</ul>
+<section class="card" style="margin-top: 1.5rem">
+  <h2>This installation</h2>
+  <ul>
+    <li>Software version {{ version }}, database schema {{ schema }}</li>
+    <li>Free disk space: {{ status.disk_free_gb }} GB ({{ status.disk_used_pct }}% used)</li>
+    <li>Outgoing email: {{ 'configured' if status.email_configured else 'not configured' }}</li>
+    {% if status.last_update %}<li>Last update: {{ status.last_update.get('at', '') }} to {{ status.last_update.get('version', '') }}</li>{% endif %}
+  </ul>
+  <p class="small muted">Updates and restores are done on the server with <code>sudo countyctl update</code> and <code>sudo countyctl restore</code>, so a web page can never change the server itself. See Help.</p>
+</section>
+<section class="card" style="margin-top: 1rem">
+  <h2>Backups</h2>
+  <form method="post" action="/staff/system/backup"><input type="hidden" name="_csrf" value="{{ csrf }}"><button class="btn secondary" type="submit">Make a backup now</button></form>
+  <ul style="margin-top: 1rem">{% for b in backups %}<li><code>{{ b.name }}</code></li>{% else %}<li>No backups yet.</li>{% endfor %}</ul>
+  <p class="small muted">Nightly backups run automatically. Backups stored on this server don't survive a disk failure; see Help, "Backups", to copy them off the server.</p>
+</section>
+{% endblock %}

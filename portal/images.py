@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -123,6 +124,40 @@ def ocr(path: Path, frame: int = 0) -> str:
     proc = subprocess.run(["tesseract", "stdin", "stdout", "--psm", "3"], input=buf.getvalue(),
                           capture_output=True, timeout=180)
     return proc.stdout.decode("utf-8", "replace").strip()
+
+
+SENSITIVE_PATTERNS = {
+    "Social Security number": re.compile(r"^\d{3}-\d{2}-\d{4}$"),
+    "Possible Social Security number (no dashes)": re.compile(r"^\d{9}$"),
+}
+
+
+def find_sensitive(path: Path, frame: int = 0) -> list[dict]:
+    """Suggest redaction boxes for text that looks like a Social Security
+    number. Suggestions only: a person reviews every one before it is applied."""
+    if not ocr_available():
+        return []
+    img = open_frame(path, frame)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    proc = subprocess.run(["tesseract", "stdin", "stdout", "tsv"], input=buf.getvalue(), capture_output=True, timeout=180)
+    out = []
+    lines = proc.stdout.decode("utf-8", "replace").splitlines()
+    for line in lines[1:]:
+        parts = line.split("\t")
+        if len(parts) < 12:
+            continue
+        word = parts[11].strip().strip(".,;:")
+        for label, pattern in SENSITIVE_PATTERNS.items():
+            if pattern.match(word):
+                left, top, width, height = (int(parts[i]) for i in (6, 7, 8, 9))
+                pad = 6
+                out.append({"label": label, "text": word,
+                            "x": max(0, round((left - pad) * 1000 / img.width)),
+                            "y": max(0, round((top - pad) * 1000 / img.height)),
+                            "w": round((width + 2 * pad) * 1000 / img.width),
+                            "h": round((height + 2 * pad) * 1000 / img.height)})
+    return out
 
 
 def pdf_to_pngs(pdf: Path, out_dir: Path, dpi: int = 200) -> list[Path]:
