@@ -4,7 +4,7 @@
 <div style="max-width: 28rem">
 <h1>Enter your code</h1>
 <p>Open your authenticator app and enter the six-digit code for this portal.</p>
-{% if error %}<div class="error-summary" role="alert"><h2>There is a problem</h2><a href="#code">{{ error }}</a></div>{% endif %}
+{% if error %}<div class="error-summary" role="alert" tabindex="-1" autofocus><h2>There is a problem</h2><a href="#code">{{ error }}</a></div>{% endif %}
 <form method="post" action="/staff/mfa" class="card" novalidate>
   <input type="hidden" name="_csrf" value="{{ csrf }}">
   <div class="field"><label for="code">Six-digit code</label>

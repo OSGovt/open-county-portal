@@ -77,7 +77,7 @@ def create_app() -> FastAPI:
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         response.headers.setdefault("Permissions-Policy", "camera=(self), geolocation=(), microphone=()")
-        if not path.startswith("/api/") and path != "/data.json":
+        if not path.startswith("/api/") and path not in ("/data.json", "/data-v1.1.json"):
             # Fonts and stylesheets may come from an https font service chosen in the theme.
             response.headers.setdefault(
                 "Content-Security-Policy",

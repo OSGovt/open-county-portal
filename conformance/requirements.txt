@@ -1,0 +1,4 @@
+# Conformance suite (runs from any computer that can reach the portal)
+httpx==0.28.1
+jsonschema==4.26.0
+playwright==1.56.0

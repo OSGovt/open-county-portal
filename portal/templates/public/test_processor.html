@@ -3,7 +3,7 @@
 <div style="max-width: 36rem" class="stack">
   <h1>TEST payment page</h1>
   <p class="banner"><strong>This is not a real payment.</strong> The site is using the built-in test processor for training and acceptance testing. No money moves and no card number is stored.</p>
-  {% if error %}<div class="error-summary" role="alert"><h2>There is a problem</h2><a href="#card">{{ error }}</a></div>{% endif %}
+  {% if error %}<div class="error-summary" role="alert" tabindex="-1" autofocus><h2>There is a problem</h2><a href="#card">{{ error }}</a></div>{% endif %}
   <div class="card">
     <p>Order {{ o.number }} · Amount <strong>{{ o.total_cents|money }}</strong></p>
     <form method="post" action="/payments/test/pay" novalidate>

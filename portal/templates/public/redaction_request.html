@@ -12,13 +12,13 @@
   <div class="field">
     <label for="f-requester_name">Your full name</label>
     {% if errors.requester_name %}<span class="field-error" id="f-requester_name-err">{{ errors.requester_name }}</span>{% endif %}
-    <input type="text" id="f-requester_name" name="requester_name" autocomplete="name" value="{{ values.requester_name }}"{% if errors.requester_name %} aria-invalid="true" aria-describedby="f-requester_name-err"{% endif %}>
+    <input type="text" id="f-requester_name" name="requester_name" autocomplete="name" required aria-required="true" value="{{ values.requester_name }}"{% if errors.requester_name %} aria-invalid="true" aria-describedby="f-requester_name-err"{% endif %}>
   </div>
   <fieldset class="field" id="f-category"{% if errors.category %} aria-describedby="f-category-err"{% endif %}>
     <legend>Which group are you in?</legend>
     {% if errors.category %}<span class="field-error" id="f-category-err">{{ errors.category }}</span>{% endif %}
     {% for c in rules.categories or [] %}
-    <label class="choice"><input type="radio" name="category" value="{{ c }}"{% if values.category == c %} checked{% endif %}> {{ c }}</label>
+    <label class="choice"><input type="radio" name="category" value="{{ c }}" required{% if values.category == c %} checked{% endif %}> {{ c }}</label>
     {% endfor %}
   </fieldset>
   <div class="field">
@@ -33,7 +33,7 @@
     <label for="f-search_names">Names on your property records</label>
     <span class="hint" id="f-search_names-hint">Every name you have used on deeds or other property documents, one per line.</span>
     {% if errors.search_names %}<span class="field-error" id="f-search_names-err">{{ errors.search_names }}</span>{% endif %}
-    <textarea id="f-search_names" name="search_names" aria-describedby="f-search_names-hint{% if errors.search_names %} f-search_names-err{% endif %}"{% if errors.search_names %} aria-invalid="true"{% endif %}>{{ values.search_names }}</textarea>
+    <textarea id="f-search_names" name="search_names" required aria-required="true" aria-describedby="f-search_names-hint{% if errors.search_names %} f-search_names-err{% endif %}"{% if errors.search_names %} aria-invalid="true"{% endif %}>{{ values.search_names }}</textarea>
   </div>
   <div class="field"><label for="f-details">Anything else the clerk should know <span class="hint" style="display: inline">(optional)</span></label>
     <textarea id="f-details" name="details">{{ values.details }}</textarea></div>

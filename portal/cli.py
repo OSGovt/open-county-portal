@@ -373,12 +373,23 @@ def cmd_pack(a) -> int:
         return 0
     if a.action == "validate":
         import yaml
-        data = yaml.safe_load(Path(a.path).read_text(encoding="utf-8"))
-        problems = statepacks.validate(data)
-        for p in problems:
-            say(f"PROBLEM: {p}")
-        say("Pack is valid." if not problems else f"{len(problems)} problem(s).")
-        return 1 if problems else 0
+        paths = [Path(a.path)] if a.path else sorted(statepacks.PACK_DIR.glob("*/pack.yaml"))
+        total = 0
+        for path in paths:
+            if path.is_dir():
+                path = path / "pack.yaml"
+            try:
+                data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+            except (OSError, yaml.YAMLError) as exc:
+                say(f"{path}: can't read it ({exc})")
+                total += 1
+                continue
+            problems = statepacks.validate(data)
+            total += len(problems)
+            say(f"{path}: " + ("valid" if not problems else f"{len(problems)} problem(s)"))
+            for p in problems:
+                say(f"  PROBLEM: {p}")
+        return 1 if total else 0
     return 1
 
 
@@ -429,7 +440,7 @@ def main(argv: list[str] | None = None) -> int:
 
     pk = sub.add_parser("pack", help="List or validate state packs.")
     pk.add_argument("action", choices=["list", "validate"])
-    pk.add_argument("path", nargs="?")
+    pk.add_argument("path", nargs="?", help="pack.yaml or its folder (validate); all packs if omitted")
     pk.set_defaults(fn=cmd_pack)
 
     from .migrate import cli as migrate_cli

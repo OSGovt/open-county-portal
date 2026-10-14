@@ -202,7 +202,7 @@ def bulk_file(name: str):
     path = get_settings().bulk_dir / "latest" / name
     if not path.exists():
         raise HTTPException(404, "No bulk file with that name.")
-    media = "text/csv" if name.endswith(".csv") else "application/json"
+    media = "text/csv" if name.endswith(".csv") else "application/jsonl" if name.endswith(".jsonl") else "application/json"
     return FileResponse(path, media_type=media, filename=name)
 
 
@@ -252,7 +252,7 @@ def data_json():
             "description": desc,
             "identifier": f"{base}/data#{slug}",
             "contactPoint": {"fn": od.get("contact_name") or site["jurisdiction_name"], "hasEmail": f"mailto:{email}"},
-            "publisher": {"name": site["jurisdiction_name"]},
+            "publisher": {"@type": "Organization", "name": site["jurisdiction_name"]},
             "keyword": keywords + [site.get("state_name") or ""],
             "modified": mods[slug],
             "accessRights": "public",
@@ -273,12 +273,18 @@ def data_json():
                                        "mediaType": "application/json", "format": "JSON"})
         if od.get("license_url"):
             ds["license"] = od["license_url"]
+            for dist in ds["distribution"]:  # DCAT-US 3.0 recommends the license on each distribution
+                dist["license"] = od["license_url"]
         ds["keyword"] = [k for k in ds["keyword"] if k]
         datasets.append(ds)
-    catalog = {"@type": "Catalog", "title": f"{site['jurisdiction_name']} open data",
+    now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
+    catalog = {"@type": "Catalog",
+               "conformsTo": {"@type": "Standard", "title": "DCAT-US 3.0",
+                              "identifier": "https://resources.data.gov/dcat-us/3.0.0"},
+               "title": f"{site['jurisdiction_name']} open data",
                "description": f"Public data published by {site['jurisdiction_name']}, {site.get('state_name', '')}.",
-               "publisher": {"name": site["jurisdiction_name"]}, "language": ["en"],
-               "modified": max(mods.values()), "dataset": datasets}
+               "publisher": {"@type": "Organization", "name": site["jurisdiction_name"]}, "language": ["en"],
+               "modified": now, "dataset": datasets}
     return JSONResponse(catalog, headers={"Access-Control-Allow-Origin": "*"})
 
 

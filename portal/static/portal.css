@@ -102,7 +102,7 @@ input[type=password], input[type=url], select, textarea {
 }
 textarea { min-height: 8rem; }
 input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--c-error); border-width: 3px; }
-input[type=file] { font: inherit; min-height: 44px; }
+input[type=file] { font: inherit; min-height: 44px; max-width: 100%; }
 fieldset { border: 0; padding: 0; margin: 0 0 1.1rem; }
 .choice { display: flex; align-items: center; gap: 0.6rem; min-height: 44px; padding: 0.3rem 0.75rem; margin-bottom: 0.4rem;
   border: 1px solid var(--c-rule); border-radius: var(--radius); background: var(--c-surface); max-width: 40rem; font-weight: 400; }

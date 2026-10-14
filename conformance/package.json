@@ -1,0 +1,9 @@
+{
+  "name": "open-county-portal-conformance",
+  "private": true,
+  "description": "Pinned axe-core for the conformance suite. Install with: npm ci",
+  "license": "AGPL-3.0-or-later",
+  "dependencies": {
+    "axe-core": "4.13.0"
+  }
+}
