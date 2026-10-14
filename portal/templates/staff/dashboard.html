@@ -34,7 +34,9 @@
       {% else %}<span class="pill bad">No backup recorded</span> Run <code>sudo countyctl backup</code> on the server.{% endif %}</li>
     <li>Free disk space: {{ status.disk_free_gb }} GB ({{ status.disk_used_pct }}% used){% if status.disk_used_pct > 85 %} <span class="pill bad">Low</span>{% endif %}</li>
     <li>Bulk data files: {{ status.bulk_generated_at[:16].replace('T', ' ') ~ ' UTC' if status.bulk_generated_at else 'not generated yet' }}</li>
-    <li>Outgoing email: {% if status.email_configured %}<span class="pill ok">Configured</span>{% else %}<span class="pill warn">Not configured</span> Receipts are not emailed. See Help, "Email".{% endif %}</li>
+    <li>Outgoing email: {% if status.email_configured %}<span class="pill ok">Configured</span>{% else %}<span class="pill warn">Not configured</span> Receipts are not emailed. See <a href="/staff/help/admin/email">Outgoing email</a>.{% endif %}</li>
+    {% if deadline %}<li>Federal accessibility (ADA Title II) compliance date:
+      {% if deadline[0] %}<strong>{{ deadline[0]|longdate }}</strong> ({{ deadline[1] }}). <a href="/staff/help/admin/accessibility-testing">Accessibility testing</a>{% else %}{{ deadline[1] }}.{% endif %}</li>{% endif %}
   </ul>
   <p><a href="/staff/system/golive">Go-live checklist</a></p>
 </section>

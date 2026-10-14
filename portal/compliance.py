@@ -49,3 +49,22 @@ def check_postings(conn: Connection) -> list[dict]:
                 item["detail"] = f"Last posted {latest:%B %d, %Y}."
         out.append(item)
     return out
+
+
+# ADA Title II web rule (28 CFR 35.200), compliance dates as amended by the
+# April 2026 interim final rule, 91 Fed. Reg. 20902. Update here if DOJ changes them.
+TITLE_II_LARGE = dt.date(2027, 4, 26)   # population 50,000 or more
+TITLE_II_SMALL = dt.date(2028, 4, 26)   # population under 50,000, and all special districts
+
+
+def title2_deadline(site: dict) -> tuple[dt.date | None, str]:
+    """The WCAG 2.1 AA compliance date for this government, and why."""
+    kind = site.get("jurisdiction_type")
+    pop = site.get("population")
+    if kind == "special_district":
+        return TITLE_II_SMALL, "special district governments have the later date regardless of population"
+    if not pop:
+        return None, "enter your population in Settings > Site identity to see your date"
+    if int(pop) >= 50_000:
+        return TITLE_II_LARGE, f"population {int(pop):,} is 50,000 or more"
+    return TITLE_II_SMALL, f"population {int(pop):,} is under 50,000"

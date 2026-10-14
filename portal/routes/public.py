@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from sqlalchemy import and_, or_, select
 
-from .. import config_store
+from .. import __version__, config_store
 from ..db import files, get_engine, instruments, meetings, offices, pages, parties, services, utcnow
 from ..settings import get_settings
 from ..web import render
@@ -136,6 +136,47 @@ def serve_file(file_id: int):
         raise HTTPException(404)
     return FileResponse(path, media_type=f["mime"] or "application/octet-stream", filename=f["name"],
                         content_disposition_type="inline")
+
+
+SOURCE_ITEMS = ("portal", "docs", "deploy", "conformance/run.py", "conformance/README.md", "conformance/package.json",
+                "conformance/requirements.txt", "tests", "Dockerfile", "docker-compose.yml", "requirements.txt",
+                "requirements-dev.txt", "VERSION", "LICENSE", "README.md", "CHANGELOG.md", ".env.example")
+
+
+def _source_root():
+    from pathlib import Path
+    return Path(__file__).resolve().parents[2]
+
+
+@router.get("/source", include_in_schema=False)
+def source_page(request: Request):
+    """AGPL section 13: everyone who uses the site can get the source code it runs."""
+    with get_engine().connect() as conn:
+        return render(request, "public/source.html", conn, page_title="Source code", version=__version__)
+
+
+@router.get("/source/download", include_in_schema=False)
+def source_download():
+    import io
+    import tarfile
+    root = _source_root()
+    # Key the cached archive by the newest file, so locally changed code is what gets served.
+    stamp = max((int(p.stat().st_mtime) for item in SOURCE_ITEMS if (root / item).exists()
+                 for p in ([root / item] if (root / item).is_file() else (root / item).rglob("*"))), default=0)
+    cache = get_settings().cache_dir / f"open-county-portal-{__version__}-{stamp}-source.tar.gz"
+    if not cache.exists():
+        buf = io.BytesIO()
+        with tarfile.open(fileobj=buf, mode="w:gz") as tar:
+            for item in SOURCE_ITEMS:
+                path = root / item
+                if path.exists():
+                    tar.add(path, arcname=f"open-county-portal-{__version__}/{item}",
+                            filter=lambda t: None if "__pycache__" in t.name or t.name.endswith(".pyc") else t)
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        tmp = cache.with_suffix(".tmp")
+        tmp.write_bytes(buf.getvalue())
+        tmp.rename(cache)
+    return FileResponse(cache, media_type="application/gzip", filename=cache.name)
 
 
 @router.get("/sitemap.xml", include_in_schema=False)

@@ -35,14 +35,24 @@ def send(to: str | None, subject: str, body: str) -> bool:
     port = int(os.environ.get("PORTAL_SMTP_PORT", "587"))
     user = os.environ.get("PORTAL_SMTP_USER")
     password = os.environ.get("PORTAL_SMTP_PASSWORD")
+    global last_error
     try:
-        with smtplib.SMTP(host, port, timeout=20) as smtp:
-            if os.environ.get("PORTAL_SMTP_STARTTLS", "true").lower() != "false":
+        if port == 465:  # implicit TLS
+            smtp_cm = smtplib.SMTP_SSL(host, port, timeout=20, context=ssl.create_default_context())
+        else:
+            smtp_cm = smtplib.SMTP(host, port, timeout=20)
+        with smtp_cm as smtp:
+            if port != 465 and os.environ.get("PORTAL_SMTP_STARTTLS", "true").lower() != "false":
                 smtp.starttls(context=ssl.create_default_context())
             if user:
                 smtp.login(user, password or "")
             smtp.send_message(msg)
+        last_error = ""
         return True
     except Exception as exc:  # never let email trouble break a payment
+        last_error = f"{exc.__class__.__name__}: {exc}"
         log.error("Email to %s failed: %s", to, exc)
         return False
+
+
+last_error = ""

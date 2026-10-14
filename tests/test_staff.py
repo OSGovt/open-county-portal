@@ -175,3 +175,28 @@ def test_certified_pdf_issue_and_verify(admin, client):
 def test_help_page_renders(admin):
     r = admin.get("/staff/help")
     assert r.status_code in (200, 404)  # docs are added later in the build
+
+
+def test_ssn_scan_lists_pages_for_review(capsys):
+    from portal import cli
+    from portal.db import images
+    from portal.settings import get_settings
+    with tx() as conn:
+        image_id = conn.execute(select(images.c.id).order_by(images.c.id)).first()[0]
+        old = conn.execute(select(images.c.ocr_text).where(images.c.id == image_id)).scalar()
+        conn.execute(images.update().where(images.c.id == image_id).values(ocr_text="Grantor SSN: 123 45 6789"))
+    try:
+        assert cli.main(["ssn-scan"]) == 0
+        report = (get_settings().migration_dir / "ssn-scan.csv").read_text()
+        assert "***-**-6789" in report and "6789" in report and "123" not in report.split("\n", 1)[1].split(",")[3]
+    finally:
+        with tx() as conn:
+            conn.execute(images.update().where(images.c.id == image_id).values(ocr_text=old))
+
+
+def test_title2_deadline():
+    from portal.compliance import title2_deadline
+    assert str(title2_deadline({"jurisdiction_type": "county", "population": 120000})[0]) == "2027-04-26"
+    assert str(title2_deadline({"jurisdiction_type": "county", "population": 9000})[0]) == "2028-04-26"
+    assert str(title2_deadline({"jurisdiction_type": "special_district", "population": 900000})[0]) == "2028-04-26"
+    assert title2_deadline({"jurisdiction_type": "county"})[0] is None

@@ -134,7 +134,9 @@ offsite_copy() {
   [ -n "$newest" ] || return 0
   echo "Copying $(basename "$newest") off the server..."
   local rc=0
-  bash -c "${cmd//\{path\}/$newest}" || rc=$?
+  cmd="${cmd//\{path\}/$newest}"
+  cmd="${cmd//\{name\}/$(basename "$newest")}"
+  bash -c "$cmd" || rc=$?
   write_status last_offsite.json "{\"at\": \"$(date -Is)\", \"ok\": $([ $rc -eq 0 ] && echo true || echo false), \"path\": \"$newest\"}"
   if [ $rc -eq 0 ]; then echo "Off-site copy finished."; log "offsite ok $newest"
   else warn "Off-site copy FAILED (exit $rc). The backup is still on this server."; log "offsite FAILED $newest rc=$rc"; return 1; fi

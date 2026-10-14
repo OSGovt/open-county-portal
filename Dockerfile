@@ -26,7 +26,11 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY portal ./portal
 COPY docs ./docs
-COPY VERSION ./VERSION
+# Shipped in the image so /source/download offers the complete source (AGPL section 13).
+COPY deploy ./deploy
+COPY tests ./tests
+COPY conformance/run.py conformance/README.md conformance/package.json conformance/requirements.txt ./conformance/
+COPY Dockerfile docker-compose.yml requirements.txt requirements-dev.txt VERSION LICENSE README.md CHANGELOG.md .env.example ./
 
 USER portal
 EXPOSE 8000

@@ -9,6 +9,7 @@ import argparse
 import datetime as dt
 import io
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -257,6 +258,46 @@ def cmd_ocr(a) -> int:
     return 0
 
 
+SSN_DASHED = re.compile(r"(?<![\d-])\d{3}-\d{2}-\d{4}(?![\d-])")
+SSN_LABELED = re.compile(r"(?i)\b(?:ssn|s\.s\.n\.?|soc(?:ial)?\.?\s*sec(?:urity)?\.?(?:\s*(?:no|number|#))?)\W{0,6}(\d{3}\D?\d{2}\D?\d{4})")
+
+
+def cmd_ssn_scan(a) -> int:
+    """List page images whose machine-read text contains something that looks like
+    a Social Security number, for records staff to review and redact."""
+    import csv
+    settings = get_settings()
+    out = settings.migration_dir / "ssn-scan.csv"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    hits = unread = scanned = 0
+    q = (select(instruments.c.instrument_number, instruments.c.import_batch, images.c.seq, images.c.ocr_text,
+                images.c.redacted)
+         .select_from(images.join(instruments, instruments.c.id == images.c.instrument_id))
+         .where(instruments.c.status == "public").order_by(instruments.c.instrument_number, images.c.seq))
+    if a.batch:
+        q = q.where(instruments.c.import_batch == a.batch)
+    base = settings.site_url
+    with get_engine().connect() as conn, out.open("w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["instrument", "page", "already_redacted", "found", "review_link"])
+        for r in conn.execute(q):
+            if not r.ocr_text:
+                unread += 1
+                continue
+            scanned += 1
+            found = SSN_DASHED.findall(r.ocr_text) + SSN_LABELED.findall(r.ocr_text)
+            if found:
+                hits += 1
+                masked = ["***-**-" + f[-4:] for f in found]
+                w.writerow([r.instrument_number, r.seq, "yes" if r.redacted else "no", " ".join(masked),
+                            f"{base}/staff/records/{r.instrument_number}/pages/{r.seq}/redact?scan=1"])
+    say(f"Checked {scanned:,} pages with machine-read text. {hits:,} page(s) may contain a Social Security number.")
+    if unread:
+        say(f"{unread:,} page(s) have no machine-read text yet; run 'countyctl app ocr' and scan again.")
+    say(f"Review list: {out}  (open each review link signed in as records staff)")
+    return 0
+
+
 def cmd_purge_uploads(a) -> int:
     """Delete sensitive uploads (such as ID photos) older than the retention period."""
     from .db import applications
@@ -281,6 +322,19 @@ def cmd_purge_uploads(a) -> int:
         audit(conn, "cli", "uploads.purge", detail={"removed": removed})
     say(f"Deleted {removed} sensitive upload(s) older than {settings.id_upload_retention_days} days.")
     return 0
+
+
+def cmd_email_test(a) -> int:
+    from . import notify
+    if not notify.configured():
+        say("Outgoing email isn't set up. Add PORTAL_SMTP_HOST and the other PORTAL_SMTP_ settings to "
+            "/opt/county-portal/.env, then run: sudo countyctl restart")
+        return 1
+    ok = notify.send(a.to, "Open County Portal test email",
+                     "This is a test from your Open County Portal server. Email receipts and notices will work.")
+    say(f"Test email sent to {a.to}. Check that it arrived (and isn't in spam)." if ok
+        else f"Sending failed: {notify.last_error}\nSee docs/admin/email.md, 'If the test fails'.")
+    return 0 if ok else 1
 
 
 def cmd_check(a) -> int:
@@ -423,8 +477,14 @@ def main(argv: list[str] | None = None) -> int:
     o = sub.add_parser("ocr", help="Read text from page images that don't have it yet.")
     o.add_argument("--limit", type=int, default=5000)
     o.set_defaults(fn=cmd_ocr)
+    ss = sub.add_parser("ssn-scan", help="List pages whose text looks like it contains a Social Security number.")
+    ss.add_argument("--batch", type=int, help="Only documents from this import batch")
+    ss.set_defaults(fn=cmd_ssn_scan)
     sub.add_parser("purge-uploads", help="Delete sensitive uploads past the retention period.").set_defaults(fn=cmd_purge_uploads)
     sub.add_parser("check", help="Self-test.").set_defaults(fn=cmd_check)
+    et = sub.add_parser("email-test", help="Send a test email to check the outgoing email settings.")
+    et.add_argument("--to", required=True)
+    et.set_defaults(fn=cmd_email_test)
     sub.add_parser("upgrade-db", help="Bring the database schema up to date (runs at every start).").set_defaults(fn=cmd_upgrade_db)
     bk = sub.add_parser("backup", help="Back up the database and files now.")
     bk.add_argument("--label", default="")

@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from sqlalchemy import func, select
 
-from ... import auth, compliance, ops_status
+from ... import auth, compliance, config_store, ops_status
 from ...db import applications, get_engine, import_batches, order_lines, orders, pia_requests, redaction_requests
 from .common import staff_render
 
@@ -34,5 +34,6 @@ def dashboard(request: Request):
         queues = [q for q in queues if auth.has_role(user, *q[2])]
         postings = compliance.check_postings(conn) if auth.has_role(user, "admin", "content") else []
         status = ops_status.summary() if auth.has_role(user, "admin") else None
+        deadline = compliance.title2_deadline(config_store.get(conn, "site")) if auth.has_role(user, "admin") else None
         return staff_render(request, "staff/dashboard.html", conn, user, page_title="Staff dashboard", queues=queues,
-                            postings=postings, status=status)
+                            postings=postings, status=status, deadline=deadline)

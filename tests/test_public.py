@@ -99,3 +99,15 @@ def test_security_headers(client):
     r = client.get("/")
     assert "frame-ancestors 'none'" in r.headers["content-security-policy"]
     assert r.headers["x-content-type-options"] == "nosniff"
+
+
+def test_source_code_offered(client):
+    """AGPL section 13: every visitor can download the running source."""
+    assert '/source"' in client.get("/").text
+    r = client.get("/source/download")
+    assert r.status_code == 200 and r.headers["content-type"] == "application/gzip"
+    import io
+    import tarfile
+    names = tarfile.open(fileobj=io.BytesIO(r.content)).getnames()
+    assert any(n.endswith("/LICENSE") for n in names) and any(n.endswith("portal/app.py") for n in names)
+    assert not any("__pycache__" in n for n in names)
