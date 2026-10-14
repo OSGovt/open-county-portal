@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import error_summary %}
+{% block content %}
+<div style="max-width: 46rem">
+<h1>Ask to remove personal information from online records</h1>
+<p>State law lets certain people ask the County Clerk to hide their {{ (rules.fields or ['personal information'])|join(', ') }} in the online records database. The official records are not changed.</p>
+{% if rules.law %}<p class="muted small">Authority: {{ rules.law }}</p>{% endif %}
+{% if rules.form_note %}<p class="notice">{{ rules.form_note }}</p>{% endif %}
+{{ error_summary(errors) }}
+<form method="post" action="/records/redaction-request" class="card" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <div class="field">
+    <label for="f-requester_name">Your full name</label>
+    {% if errors.requester_name %}<span class="field-error" id="f-requester_name-err">{{ errors.requester_name }}</span>{% endif %}
+    <input type="text" id="f-requester_name" name="requester_name" autocomplete="name" value="{{ values.requester_name }}"{% if errors.requester_name %} aria-invalid="true" aria-describedby="f-requester_name-err"{% endif %}>
+  </div>
+  <fieldset class="field" id="f-category"{% if errors.category %} aria-describedby="f-category-err"{% endif %}>
+    <legend>Which group are you in?</legend>
+    {% if errors.category %}<span class="field-error" id="f-category-err">{{ errors.category }}</span>{% endif %}
+    {% for c in rules.categories or [] %}
+    <label class="choice"><input type="radio" name="category" value="{{ c }}"{% if values.category == c %} checked{% endif %}> {{ c }}</label>
+    {% endfor %}
+  </fieldset>
+  <div class="field">
+    <label for="f-email">Email</label>
+    <span class="hint" id="f-email-hint">Give an email or a phone number.</span>
+    {% if errors.email %}<span class="field-error" id="f-email-err">{{ errors.email }}</span>{% endif %}
+    <input type="email" id="f-email" name="email" autocomplete="email" value="{{ values.email }}" aria-describedby="f-email-hint{% if errors.email %} f-email-err{% endif %}"{% if errors.email %} aria-invalid="true"{% endif %}>
+  </div>
+  <div class="field"><label for="f-phone">Phone <span class="hint" style="display: inline">(optional)</span></label>
+    <input type="tel" id="f-phone" name="phone" autocomplete="tel" value="{{ values.phone }}"></div>
+  <div class="field">
+    <label for="f-search_names">Names on your property records</label>
+    <span class="hint" id="f-search_names-hint">Every name you have used on deeds or other property documents, one per line.</span>
+    {% if errors.search_names %}<span class="field-error" id="f-search_names-err">{{ errors.search_names }}</span>{% endif %}
+    <textarea id="f-search_names" name="search_names" aria-describedby="f-search_names-hint{% if errors.search_names %} f-search_names-err{% endif %}"{% if errors.search_names %} aria-invalid="true"{% endif %}>{{ values.search_names }}</textarea>
+  </div>
+  <div class="field"><label for="f-details">Anything else the clerk should know <span class="hint" style="display: inline">(optional)</span></label>
+    <textarea id="f-details" name="details">{{ values.details }}</textarea></div>
+  <button class="btn" type="submit">Send request</button>
+</form>
+</div>
+{% endblock %}

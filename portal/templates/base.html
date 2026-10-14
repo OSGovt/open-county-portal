@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="{{ site.language or 'en' }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ page_title|default('Home') }}{% endblock %} · {{ site.jurisdiction_name }}</title>
+<meta name="description" content="{% block description %}Official website of {{ site.jurisdiction_name }}, {{ site.state_name }}.{% endblock %}">
+{% if theme.font_css_url %}<link rel="stylesheet" href="{{ theme.font_css_url }}">{% endif %}
+<link rel="stylesheet" href="/theme.css?v={{ theme_version }}">
+<link rel="stylesheet" href="/static/portal.css?v={{ version }}">
+<link rel="alternate" type="application/json" title="Data catalog" href="/data.json">
+{% block head %}{% endblock %}
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+{% if staff_user %}
+<div class="staff-bar no-print"><div class="wrap cluster small" style="justify-content: space-between; padding-top: 0.25rem; padding-bottom: 0.25rem">
+  <span>Signed in as {{ staff_user }}</span><a href="/staff">Staff console</a>
+</div></div>
+{% endif %}
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/">
+      {% if theme.logo_file_id %}<img src="/files/{{ theme.logo_file_id }}" alt="{{ theme.logo_alt or '' }}">{% endif %}
+      {% if not theme.logo_file_id or theme.show_name_with_logo %}
+      <span class="brand-name">{{ site.jurisdiction_name }}<small>{{ site.state_name }}</small></span>
+      {% endif %}
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="/records"{% if nav == 'records' %} aria-current="page"{% endif %}>Search records</a></li>
+        <li><a href="/pay"{% if nav == 'pay' %} aria-current="page"{% endif %}>Pay</a></li>
+        <li><a href="/services"{% if nav == 'services' %} aria-current="page"{% endif %}>Services</a></li>
+        <li><a href="/meetings"{% if nav == 'meetings' %} aria-current="page"{% endif %}>Meetings</a></li>
+        <li><a href="/offices"{% if nav == 'offices' %} aria-current="page"{% endif %}>Offices</a></li>
+        <li><a class="cart-link" href="/cart"{% if nav == 'cart' %} aria-current="page"{% endif %}>Cart <span aria-hidden="true">({{ cart_count }})</span><span class="visually-hidden">, {{ cart_count }} {{ 'item' if cart_count == 1 else 'items' }}</span></a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<div class="wrap" role="status" aria-live="polite">
+  {% for f in flashes %}<p class="flash {{ f.kind }}">{{ f.message }}</p>{% endfor %}
+</div>
+{% if alert.enabled and alert.title %}
+<div class="wrap" style="margin-top: 1rem">
+  <div class="banner" role="region" aria-label="Alert"><strong>{{ alert.title }}</strong>{% if alert.body %} {{ alert.body }}{% endif %}
+  {% if alert.link_url %} <a href="{{ alert.link_url }}">{{ alert.link_text or 'Read more' }}</a>{% endif %}</div>
+</div>
+{% endif %}
+<main id="main" tabindex="-1">
+  <div class="wrap">{% block content %}{% endblock %}</div>
+</main>
+<footer class="site-footer">
+  <div class="wrap cols">
+    <div>
+      <h2>{{ site.jurisdiction_name }}</h2>
+      {% if site.address %}<p style="white-space: pre-line; margin: 0">{{ site.address }}</p>{% endif %}
+      {% if site.phone %}<p style="margin: 0.3rem 0 0">{{ site.phone }}</p>{% endif %}
+    </div>
+    <div>
+      <h2>Transparency</h2>
+      <ul>
+        <li><a href="/data">Open data and API (free)</a></li>
+        <li><a href="/notices">Public notices and required postings</a></li>
+        <li><a href="/meetings">Meetings and agendas</a></li>
+        <li><a href="/public-information">Request public information</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Help</h2>
+      <ul>
+        <li><a href="/accessibility">Accessibility</a></li>
+        <li><a href="/accessibility#report">Report a barrier</a></li>
+        <li><a href="/staff/login">Staff sign in</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

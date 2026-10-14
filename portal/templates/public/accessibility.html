@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<article style="max-width: 48rem">
+  <h1>Accessibility</h1>
+  <p>{{ site.jurisdiction_name }} wants everyone to be able to use this website, including people who use screen readers, keyboards, voice control, magnification, or captions.</p>
+  <h2>Our standard</h2>
+  <p>This site is built to meet the Web Content Accessibility Guidelines (WCAG) 2.1, level AA, the standard the U.S. Department of Justice set for state and local government websites under Title II of the Americans with Disabilities Act. Every software release is tested automatically and by hand with a keyboard and screen readers.</p>
+  <h2>What we know isn't perfect</h2>
+  <ul>
+    <li>Some older recorded documents are scanned images. Their index information is always available as text, each page has a machine-read text version, and you can ask for an accessible version of any document.</li>
+    <li>Some documents moved from our previous website may still be under review.</li>
+  </ul>
+  <h2 id="report">Report a barrier or ask for another format</h2>
+  <p>If anything on this site doesn't work for you, tell us what page and what happened. We will respond and provide the information another way.</p>
+  {% if site.accessibility_contact %}<p>{{ site.accessibility_contact|markdown }}</p>
+  {% else %}<p>Contact {{ site.jurisdiction_name }}{% if site.phone %} at {{ site.phone }}{% endif %}{% if site.email %} or <a href="mailto:{{ site.email }}">{{ site.email }}</a>{% endif %}.</p>{% endif %}
+</article>
+{% endblock %}

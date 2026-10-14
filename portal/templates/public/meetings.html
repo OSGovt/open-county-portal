@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Meetings and agendas</h1>
+<p>Notices and agendas are posted here at the same time they are posted at the courthouse.</p>
+<section aria-labelledby="up-h">
+  <h2 id="up-h">Upcoming</h2>
+  {% if not upcoming %}<p>No meetings are scheduled right now.</p>{% endif %}
+  <ul class="plain">
+    {% for m in upcoming %}
+    <li class="card">
+      <h3><a href="/meetings/{{ m.id }}">{{ m.title }}</a>{% if m.status == 'cancelled' %} <span class="pill bad">Cancelled</span>{% endif %}</h3>
+      <p style="margin: 0">{{ m.body }} · {{ m.starts_at|localtime }}{% if m.location %} · {{ m.location }}{% endif %}</p>
+      {% if m.posted_at %}<p class="muted small" style="margin: 0.3rem 0 0">Notice posted {{ m.posted_at|localtime }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+<section aria-labelledby="past-h" style="margin-top: 2rem">
+  <h2 id="past-h">Past meetings</h2>
+  {% if not past %}<p>No past meetings yet.</p>{% endif %}
+  <ul>
+    {% for m in past %}<li><a href="/meetings/{{ m.id }}">{{ m.title }}, {{ m.starts_at|longdate }}</a>{% if m.minutes %} · minutes available{% endif %}{% if m.video_url %} · video{% endif %}</li>{% endfor %}
+  </ul>
+</section>
+{% endblock %}

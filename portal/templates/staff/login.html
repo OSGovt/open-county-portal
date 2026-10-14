@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div style="max-width: 28rem">
+<h1>Staff sign in</h1>
+{% if error %}<div class="error-summary" role="alert"><h2>There is a problem</h2><p style="margin: 0">{{ error }}</p></div>{% endif %}
+<form method="post" action="/staff/login" class="card" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="next" value="{{ next }}">
+  <div class="field"><label for="email">Email</label><input type="email" id="email" name="email" autocomplete="username" value="{{ email or '' }}" required></div>
+  <div class="field"><label for="password">Password</label><input type="password" id="password" name="password" autocomplete="current-password" required></div>
+  <button class="btn" type="submit">Continue</button>
+</form>
+<p class="small muted" style="margin-top: 1rem">Forgot your password or lost your phone? Ask your administrator to reset it.</p>
+</div>
+{% endblock %}

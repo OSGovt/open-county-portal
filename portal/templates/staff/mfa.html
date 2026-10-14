@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div style="max-width: 28rem">
+<h1>Enter your code</h1>
+<p>Open your authenticator app and enter the six-digit code for this portal.</p>
+{% if error %}<div class="error-summary" role="alert"><h2>There is a problem</h2><a href="#code">{{ error }}</a></div>{% endif %}
+<form method="post" action="/staff/mfa" class="card" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <div class="field"><label for="code">Six-digit code</label>
+    <input type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" style="max-width: 10rem"{% if error %} aria-invalid="true"{% endif %}></div>
+  <button class="btn" type="submit">Sign in</button>
+</form>
+</div>
+{% endblock %}

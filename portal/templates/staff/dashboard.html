@@ -1,0 +1,42 @@
+{% extends "staff/layout.html" %}
+{% block staff %}
+<h1>Good to see you, {{ user.name.split(' ')[0] }}</h1>
+{% if queues %}
+<section aria-labelledby="q-h">
+  <h2 id="q-h">Waiting for you</h2>
+  <ul class="grid plain">
+    {% for label, href, roles, n in queues %}
+    <li style="margin: 0"><a class="tile" href="{{ href }}"><strong>{{ label }}</strong><span style="font-size: 1.6rem; font-weight: 800; color: var(--c-text)">{{ n }}</span></a></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% if postings %}
+<section aria-labelledby="p-h" style="margin-top: 1.5rem">
+  <h2 id="p-h">Required postings</h2>
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th scope="col">Requirement</th><th scope="col">Status</th><th scope="col">Detail</th></tr></thead>
+    <tbody>{% for p in postings %}
+      <tr><td>{{ p.title }}<br><span class="muted small">{{ p.authority }}</span></td>
+        <td><span class="pill {{ p.status }}">{{ {'ok': 'OK', 'warn': 'Check', 'bad': 'Missing'}[p.status] }}</span></td>
+        <td>{{ p.detail }}</td></tr>{% endfor %}
+    </tbody></table></div>
+  <p class="small"><a href="/staff/content/postings/new">Post a notice</a> · <a href="/staff/content/meetings/new">Post a meeting</a></p>
+</section>
+{% endif %}
+{% if status %}
+<section aria-labelledby="s-h" style="margin-top: 1.5rem" class="card">
+  <h2 id="s-h">System health</h2>
+  <ul>
+    <li>Last backup:
+      {% if status.backup %}{{ status.backup.finished_at[:16].replace('T', ' ') }} UTC
+        {% if status.backup_age_days is not none and status.backup_age_days > 1 %}<span class="pill bad">{{ status.backup_age_days }} days old</span>{% else %}<span class="pill ok">OK</span>{% endif %}
+      {% else %}<span class="pill bad">No backup recorded</span> Run <code>sudo countyctl backup</code> on the server.{% endif %}</li>
+    <li>Free disk space: {{ status.disk_free_gb }} GB ({{ status.disk_used_pct }}% used){% if status.disk_used_pct > 85 %} <span class="pill bad">Low</span>{% endif %}</li>
+    <li>Bulk data files: {{ status.bulk_generated_at[:16].replace('T', ' ') ~ ' UTC' if status.bulk_generated_at else 'not generated yet' }}</li>
+    <li>Outgoing email: {% if status.email_configured %}<span class="pill ok">Configured</span>{% else %}<span class="pill warn">Not configured</span> Receipts are not emailed. See Help, "Email".{% endif %}</li>
+  </ul>
+  <p><a href="/staff/system/golive">Go-live checklist</a></p>
+</section>
+{% endif %}
+{% endblock %}

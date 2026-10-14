@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width: 40rem">
+  <h1>{{ heading }}</h1>
+  <p>{{ message }}</p>
+  <form class="inline-form" action="/search" method="get" role="search">
+    <div class="field grow"><label for="q">Search</label><input type="search" id="q" name="q"></div>
+    <button class="btn" type="submit">Search</button>
+  </form>
+  <p style="margin-top: 1rem"><a href="/">Go to the home page</a></p>
+</div>
+{% endblock %}

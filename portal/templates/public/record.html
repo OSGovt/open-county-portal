@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block content %}
+<p class="no-print"><a href="/records">Search records</a></p>
+<h1>{{ r.doc_type }} {{ r.instrument_number }}</h1>
+<div class="split">
+  <div class="main stack">
+    <div class="table-wrap">
+      <table class="data">
+        <caption>Index information</caption>
+        <tbody>
+          <tr><th scope="row">Instrument number</th><td>{{ r.instrument_number }}</td></tr>
+          <tr><th scope="row">Type</th><td>{{ r.doc_type }}</td></tr>
+          <tr><th scope="row">Recorded</th><td>{{ r.recorded_date|longdate or 'Not recorded' }}</td></tr>
+          {% if r.book %}<tr><th scope="row">Volume and page</th><td>{{ r.book }}{% if r.page %}, page {{ r.page }}{% endif %}</td></tr>{% endif %}
+          <tr><th scope="row">Grantor (from)</th><td>{{ r.grantors|join('; ') or 'None listed' }}</td></tr>
+          <tr><th scope="row">Grantee (to)</th><td>{{ r.grantees|join('; ') or 'None listed' }}</td></tr>
+          {% if r.legal_description %}<tr><th scope="row">Legal description</th><td>{{ r.legal_description }}</td></tr>{% endif %}
+          {% if r.property_id and rconf.show_property_id %}<tr><th scope="row">Appraisal district property ID</th><td>{{ r.property_id }}</td></tr>{% endif %}
+          {% if r.remarks %}<tr><th scope="row">Remarks</th><td>{{ r.remarks }}</td></tr>{% endif %}
+          <tr><th scope="row">Pages</th><td>{{ r.page_count }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <section aria-labelledby="img-h" class="card">
+      <h2 id="img-h">Document {% if count %}page {{ p }} of {{ count }}{% else %}image{% endif %}</h2>
+      {% if current %}
+      <img class="page-image" src="/records/{{ r.instrument_number }}/pages/{{ current.seq }}.png"
+           alt="Scanned image of page {{ p }} of {{ count }}. The machine-read text of this page follows the image.">
+      {% if current.redacted %}<p class="small muted">Some personal information on this page is hidden in the online copy, as state law requires. The official record is unchanged.</p>{% endif %}
+      {% if count > 1 %}
+      <nav class="pager" aria-label="Document pages" style="margin-top: 0.75rem">
+        {% if p > 1 %}<a class="btn secondary" href="/records/{{ r.instrument_number }}?p={{ p - 1 }}#img-h">Previous page</a>{% endif %}
+        <span>Page {{ p }} of {{ count }}</span>
+        {% if p < count %}<a class="btn secondary" href="/records/{{ r.instrument_number }}?p={{ p + 1 }}#img-h">Next page</a>{% endif %}
+      </nav>
+      {% endif %}
+      <details style="margin-top: 0.75rem">
+        <summary style="min-height: 44px; display: flex; align-items: center; font-weight: 700; cursor: pointer">Read the text of page {{ p }}</summary>
+        {% if current.ocr_text %}
+        <p class="small muted">This text was read from the scanned image by a computer and may contain errors.</p>
+        <div class="ocr-text" tabindex="0" role="region" aria-label="Text of page {{ p }}">{{ current.ocr_text }}</div>
+        {% else %}
+        <p>Machine-read text isn't available for this page yet. Use the form below to ask for an accessible version.</p>
+        {% endif %}
+      </details>
+      {% else %}
+      <p>No page images are available online for this document. The index information above is complete. You can still order a certified copy.</p>
+      {% endif %}
+    </section>
+    {% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
+  </div>
+
+  <aside class="side stack" aria-label="Copies">
+    <section class="card">
+      <h2>Get a copy</h2>
+      {% if rconf.free_downloads and count %}
+      <p><strong>Download, free.</strong> A PDF of all {{ count }} pages. Not certified.</p>
+      <a class="btn secondary" href="/records/{{ r.instrument_number }}/download.pdf" download>Download free copy (PDF)</a>
+      {% endif %}
+      <h3 style="margin-top: 1.25rem">Certified copy</h3>
+      <p>A copy the County Clerk certifies as true and correct, for courts, lenders, and title work.</p>
+      <form method="post" action="/cart/add" class="stack">
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <input type="hidden" name="kind" value="certified_copy">
+        <input type="hidden" name="instrument" value="{{ r.instrument_number }}">
+        <fieldset>
+          <legend>Format</legend>
+          <label class="choice"><input type="radio" name="format" value="electronic" checked> Certified PDF by email</label>
+          <label class="choice"><input type="radio" name="format" value="paper"> Paper, mailed or picked up</label>
+        </fieldset>
+        <button class="btn" type="submit">Add certified copy to cart</button>
+      </form>
+    </section>
+    <section class="card" id="accessible">
+      <h2>Need this in another format?</h2>
+      <p>We'll send a version you can read with a screen reader or in large print.</p>
+      <form method="post" action="/records/{{ r.instrument_number }}/accessible-version" novalidate>
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <div class="field"><label for="acc-email">Your email</label><input type="email" id="acc-email" name="email" autocomplete="email" required></div>
+        <div class="field"><label for="acc-needs">What format works for you?</label><span class="hint" id="acc-needs-hint">For example: tagged PDF, plain text, large print</span>
+          <input type="text" id="acc-needs" name="needs" aria-describedby="acc-needs-hint"></div>
+        <button class="btn secondary" type="submit">Request accessible version</button>
+      </form>
+    </section>
+  </aside>
+</div>
+{% endblock %}

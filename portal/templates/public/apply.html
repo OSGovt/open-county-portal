@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import error_summary, field %}
+{% block content %}
+<div style="max-width: 44rem">
+<h1>{{ form_def.title }}</h1>
+{% if form_def.intro %}<p>{{ form_def.intro }}</p>{% endif %}
+{% if fee and fee.amount_cents %}<p><strong>Fee: {{ fee.amount_cents|money }}.</strong> You'll pay after you submit this form.</p>{% endif %}
+{{ error_summary(errors) }}
+<form method="post" action="/apply/{{ slug }}" enctype="multipart/form-data" class="card" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  {% for f in form_def.fields %}{{ field(f, values.get(f.name, ''), errors) }}{% endfor %}
+  <button class="btn" type="submit">{{ 'Continue to payment' if fee and fee.amount_cents else 'Submit' }}</button>
+</form>
+</div>
+{% endblock %}

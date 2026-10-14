@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Pay {{ title|lower }}</h1>
+{% if kind == 'property_tax' %}<p>The appraisal district sets property values. Questions about your value go to the appraisal district{% if site.appraisal_district_url %} (<a href="{{ site.appraisal_district_url }}">appraisal district website</a>){% endif %}.</p>{% endif %}
+{% if error %}<div class="error-summary" role="alert"><h2>There is a problem</h2><a href="#q">{{ error }}</a></div>{% endif %}
+<form class="inline-form card" action="/pay/{{ kind }}" method="get" novalidate>
+  <div class="field grow">
+    <label for="q">{{ label }}</label>
+    {% if hint %}<span class="hint" id="q-hint">{{ hint }}</span>{% endif %}
+    <input type="text" id="q" name="q" value="{{ q }}"{% if hint %} aria-describedby="q-hint"{% endif %}{% if error %} aria-invalid="true"{% endif %}>
+  </div>
+  <button class="btn" type="submit">Find my bill</button>
+</form>
+{% if searched and not error %}
+<section aria-labelledby="m-h" style="margin-top: 1.5rem">
+  <h2 id="m-h">{{ matches|length }} {{ 'match' if matches|length == 1 else 'matches' }}</h2>
+  {% if not matches %}<p>Nothing matched. Check the number on your bill, or contact the office.</p>{% endif %}
+  <ul class="plain">
+  {% for r in matches %}
+    <li class="card">
+      <h3>Account {{ r.account }}</h3>
+      <p style="margin: 0">{{ r.name or '' }}{% if r.address %} · {{ r.address }}{% endif %}</p>
+      {% if r.description %}<p class="muted" style="margin: 0.25rem 0 0">{{ r.description }}</p>{% endif %}
+      <p style="font-size: 1.2rem; margin: 0.6rem 0"><strong>Amount due: {{ r.amount_due_cents|money }}</strong>{% if r.due_date %} <span class="muted">· due by {{ r.due_date|longdate }}</span>{% endif %}</p>
+      {% if r.amount_due_cents > 0 %}
+      <form method="post" action="/cart/add" novalidate>
+        <input type="hidden" name="_csrf" value="{{ csrf }}">
+        <input type="hidden" name="kind" value="receivable">
+        <input type="hidden" name="receivable_id" value="{{ r.id }}">
+        <fieldset>
+          <legend>How much do you want to pay?</legend>
+          <label class="choice"><input type="radio" name="amount_choice" value="full" checked> Full amount, {{ r.amount_due_cents|money }}</label>
+          {% if r.allow_partial %}
+          <label class="choice"><input type="radio" name="amount_choice" value="partial"> Part of it</label>
+          <div class="field"><label for="pa-{{ r.id }}">Partial amount <span class="hint" style="display: inline">(only if you chose "Part of it")</span></label>
+            <input type="text" inputmode="decimal" id="pa-{{ r.id }}" name="partial_amount" style="max-width: 14rem"></div>
+          {% endif %}
+        </fieldset>
+        <button class="btn" type="submit">Add to cart</button>
+      </form>
+      {% else %}<p><span class="pill ok">Paid in full</span></p>{% endif %}
+    </li>
+  {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

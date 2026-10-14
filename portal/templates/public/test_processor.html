@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width: 36rem" class="stack">
+  <h1>TEST payment page</h1>
+  <p class="banner"><strong>This is not a real payment.</strong> The site is using the built-in test processor for training and acceptance testing. No money moves and no card number is stored.</p>
+  {% if error %}<div class="error-summary" role="alert"><h2>There is a problem</h2><a href="#card">{{ error }}</a></div>{% endif %}
+  <div class="card">
+    <p>Order {{ o.number }} · Amount <strong>{{ o.total_cents|money }}</strong></p>
+    <form method="post" action="/payments/test/pay" novalidate>
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <input type="hidden" name="order" value="{{ o.number }}">
+      <input type="hidden" name="return" value="{{ return_url }}">
+      <input type="hidden" name="cancel" value="{{ cancel_url }}">
+      <div class="field">
+        <label for="card">Test card number</label>
+        <span class="hint" id="card-hint">4242 4242 4242 4242 approves. 4000 0000 0000 0002 declines.</span>
+        <input type="text" id="card" name="card" inputmode="numeric" autocomplete="off" aria-describedby="card-hint"{% if error %} aria-invalid="true"{% endif %}>
+      </div>
+      <button class="btn" type="submit">Pay {{ o.total_cents|money }} (test)</button>
+    </form>
+    <p style="margin-top: 1rem"><a href="{{ cancel_url }}">Cancel and go back</a></p>
+  </div>
+</div>
+{% endblock %}

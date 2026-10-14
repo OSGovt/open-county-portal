@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Released public information</h1>
+<p>Responses to past requests that the county has published so anyone can read them.</p>
+{% if not rows %}<p>No responses have been published yet.</p>{% endif %}
+<ul class="plain">
+  {% for r in rows %}
+  <li class="card">
+    <h2 style="font-size: 1.15rem">{{ r.number }} · received {{ r.received_at|longdate }}</h2>
+    <p><strong>Request:</strong> {{ r.description }}</p>
+    {% if r.response %}<div>{{ r.response|markdown }}</div>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

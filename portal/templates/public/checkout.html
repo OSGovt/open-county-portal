@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import error_summary %}
+{% block content %}
+<div style="max-width: 44rem">
+<p><a href="/cart">Back to cart</a></p>
+<h1>Checkout</h1>
+{% if is_test %}<p class="banner"><strong>Test mode.</strong> This site is using the test payment processor. No real payment will be taken.</p>{% endif %}
+{{ error_summary(errors) }}
+<section class="card" aria-labelledby="sum-h" style="margin-bottom: 1rem">
+  <h2 id="sum-h">Order summary</h2>
+  <ul class="plain">{% for l in priced.lines %}<li class="cluster" style="justify-content: space-between"><span>{{ l.label }}</span><span class="num">{{ l.amount_cents|money }}</span></li>{% endfor %}</ul>
+  <div class="totals" style="margin-top: 0.75rem"><span>Subtotal</span><strong class="num">{{ priced.subtotal|money }}</strong></div>
+</section>
+<form method="post" action="/checkout" class="card" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <div class="field">
+    <label for="f-email">Email for your receipt</label>
+    {% if errors.email %}<span class="field-error" id="f-email-err">{{ errors.email }}</span>{% endif %}
+    <input type="email" id="f-email" name="email" autocomplete="email" value="{{ values.email or '' }}"{% if errors.email %} aria-invalid="true" aria-describedby="f-email-err"{% endif %}>
+  </div>
+  <fieldset class="field" id="f-method"{% if errors.method %} aria-describedby="f-method-err"{% endif %}>
+    <legend>How do you want to pay?</legend>
+    {% if errors.method %}<span class="field-error" id="f-method-err">{{ errors.method }}</span>{% endif %}
+    {% for m in methods %}
+    <label class="choice"><input type="radio" name="method" value="{{ m.code }}"{% if values.method == m.code or (not values.method and loop.first) %} checked{% endif %}>
+      <span>{{ m.label }}{% if m.fee %}: {{ m.fee_label }} {{ m.fee|money }}, total {{ (priced.subtotal + m.fee)|money }}{% else %}: no processing fee, total {{ priced.subtotal|money }}{% endif %}</span></label>
+    {% endfor %}
+  </fieldset>
+  {% if fee_authority %}<p class="muted small">{{ fee_authority }}</p>{% endif %}
+  <p>Next, you'll enter payment details on the payment processor's secure page. Card numbers never reach county servers.</p>
+  <button class="btn" type="submit">Continue to secure payment</button>
+</form>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<article style="max-width: 50rem" class="stack">
+  <p><a href="/meetings">All meetings</a></p>
+  <h1>{{ m.title }}</h1>
+  {% if m.status == 'cancelled' %}<p class="banner"><strong>This meeting is cancelled.</strong></p>{% endif %}
+  <p style="font-size: 1.1rem">{{ m.body }} · {{ m.starts_at|localtime }}{% if m.location %}<br>{{ m.location }}{% endif %}</p>
+  {% if m.posted_at %}<p class="muted">Notice posted {{ m.posted_at|localtime }}</p>{% endif %}
+  {% if m.agenda %}<section class="card" aria-labelledby="ag-h"><h2 id="ag-h">Agenda</h2>{{ m.agenda|markdown }}</section>{% endif %}
+  {% if m.video_url %}<section class="card"><h2>Video</h2><p><a href="{{ m.video_url }}">Watch the meeting video (captioned)</a></p></section>{% endif %}
+  {% if m.minutes %}<section class="card" aria-labelledby="mn-h"><h2 id="mn-h">Minutes</h2>{{ m.minutes|markdown }}</section>{% endif %}
+</article>
+{% endblock %}

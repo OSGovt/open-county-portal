@@ -1,0 +1,363 @@
+# Texas state pack — the reference pack for Open County Portal.
+#
+# Every rule cites its source. Fee amounts are SAMPLES taken from published
+# Texas county fee schedules; each county must confirm every fee against its
+# own Commissioners Court order before going live (the staff console blocks
+# go-live until each fee is confirmed).
+#
+# Status stays "draft" until a reviewer with Texas county-law expertise signs
+# off in REVIEW.md.
+
+pack: tx
+name: Texas
+version: "2026.10"
+status: draft
+reviewed_by: null
+
+sources:
+  - title: Local Government Code chapter 118 (county clerk fees)
+    url: https://tcss.legis.texas.gov/resources/LG/htm/LG.118.htm
+  - title: Local Government Code chapter 132 (card payments)
+    url: https://statutes.capitol.texas.gov/Docs/LG/htm/LG.132.htm
+  - title: Property Code 11.008 as amended by HB 4350 (2025)
+    url: https://capitol.texas.gov/tlodocs/89R/billtext/html/HB04350F.htm
+  - title: TAC county website posting requirements
+    url: https://www.county.org/getmedia/4dfb135e-83d4-4adb-8c4a-42140ac6b6e9/web-posting-requirements.pdf
+  - title: Government Code 551.056 (HB 3440, 2023)
+    url: https://capitol.texas.gov/tlodocs/88R/billtext/html/HB03440F.htm
+
+offices:
+  - slug: county-clerk
+    name: County Clerk
+    description: Property records, recording, marriage licenses, birth and death certificates, assumed names, Commissioners Court minutes.
+  - slug: district-clerk
+    name: District Clerk
+    description: District court records, jury service, court payments.
+  - slug: tax-office
+    name: Tax Assessor-Collector
+    description: Property tax collection, vehicle titles and registration.
+  - slug: justice-of-the-peace
+    name: Justice of the Peace
+    description: Citations, evictions, small claims.
+  - slug: sheriff
+    name: Sheriff
+    description: Inmate information, civil process, records.
+  - slug: commissioners-court
+    name: Commissioners Court
+    description: The county's governing body. Meetings, budget, tax rate.
+  - slug: environmental-health
+    name: Environmental Health
+    description: On-site sewage facility (septic) permits and inspections.
+
+records:
+  online_notice: >-
+    This online database is not the official repository of real property
+    records and may not reflect the complete or unaltered contents of those
+    records as maintained in the official real property records.
+  online_notice_source: Property Code 11.008(k), added by HB 4350 (2025)
+  copy_fees_reach_free_downloads: undecided   # county counsel must decide; see docs/state-packs/texas.md
+  redaction:
+    law: Property Code 11.008(j); Government Code 552.117 and 552.1175
+    fields: [social security number, driver's license number, residence address]
+    categories:
+      - Peace officer
+      - Person with power or authority under Code of Criminal Procedure 2A.002
+      - Federal judge or federal bankruptcy judge
+      - United States marshal
+      - United States attorney
+      - State judge
+      - Family member of a federal judge, marshal, U.S. attorney, or state judge
+      - Current or former county clerk, district clerk, or clerk's office employee
+    form_note: Use the redaction request form prescribed by the Office of Court Administration.
+  erecording:
+    allowed_submitters: Attorneys licensed in Texas, lenders, title companies and agents, state agencies, municipal clerks (Local Government Code 195.003).
+    note: Counties may not offer eRecording to the general public. List the county's approved eRecording vendors on the recording service page.
+
+public_information:
+  law_name: Texas Public Information Act (Government Code chapter 552)
+  intro: >-
+    This is the designated way to submit a written request for public
+    information to this county under Government Code 552.234. You do not have
+    to say why you want the records.
+  response_rule: >-
+    The office will release the information promptly. If it cannot do so
+    within 10 business days, it will tell you in writing when the information
+    will be available. If there are charges, you will receive an itemized
+    estimate first.
+  business_days: 10
+
+payments:
+  card_fee_law: Local Government Code 132.002 and 132.003 (reimbursement fee set by Commissioners Court; vendor transaction fee may be passed through under 132.003(d))
+  dishonored_card_law: Local Government Code 132.004
+
+postings:
+  - code: meeting-notice-agenda
+    title: Meeting notice and agenda
+    authority: Government Code 551.056
+    cadence: per_meeting
+    office: commissioners-court
+    note: Post on the website home page or landing page at the same time as the physical posting, at least 72 hours before the meeting.
+  - code: tax-rate-budget
+    title: Tax rate and budget information
+    authority: Tax Code 26.18
+    cadence: annual
+    office: commissioners-court
+    max_age_days: 400
+  - code: budget
+    title: Proposed and adopted budget
+    authority: Local Government Code chapter 111
+    cadence: annual
+    office: commissioners-court
+    max_age_days: 400
+  - code: election-office-contact
+    title: Election office contact information and polling places
+    authority: Election Code 31.125
+    cadence: continuous
+    office: commissioners-court
+  - code: notice-of-election
+    title: Notice of election
+    authority: Election Code 4.003 and 4.008
+    cadence: per_election
+    office: commissioners-court
+  - code: conflict-disclosures
+    title: Conflict of interest disclosures and questionnaires
+    authority: Local Government Code 176.009
+    cadence: continuous
+    office: county-clerk
+  - code: chapter-381-agreements
+    title: Economic development (Chapter 381) agreements
+    authority: Local Government Code 381.005(c)
+    cadence: continuous
+    office: commissioners-court
+  - code: pia-method
+    title: How to request public information
+    authority: Government Code 552.234
+    cadence: continuous
+    office: commissioners-court
+    automatic: true   # satisfied by the portal's /public-information page
+
+handoffs:
+  - code: vehicle-renewal
+    title: Texas by Texas (vehicle registration renewal)
+    url: https://txt.texas.gov/
+  - code: efile
+    title: eFileTexas (court e-filing)
+    url: https://www.efiletexas.gov/
+  - code: voter-info
+    title: VoteTexas.gov (voter registration and elections)
+    url: https://www.votetexas.gov/
+
+# Fee templates. Amounts are SAMPLES from published Texas schedules and must
+# be confirmed by each county. effective_from is set to the install date.
+fees:
+  - {code: rec_first, office: county-clerk, label: "Recording, first page", amount: 5.00, unit: document, statute: "Local Gov't Code 118.011(a)", fund: General Fund}
+  - {code: rec_addl, office: county-clerk, label: "Recording, each additional page", amount: 4.00, unit: page, statute: "Local Gov't Code 118.011(a)", fund: General Fund}
+  - {code: records_mgmt, office: county-clerk, label: "Records management and preservation", amount: 10.00, unit: document, statute: "Local Gov't Code 118.011(b)(2)", fund: Records Management Fund}
+  - {code: records_archive, office: county-clerk, label: "Records archive", amount: 10.00, unit: document, statute: "Local Gov't Code 118.011(f)(1)", fund: Records Archive Fund}
+  - {code: copy_page, office: county-clerk, label: "Copy, per page", amount: 1.00, unit: page, statute: "Local Gov't Code 118.011(a)(4)", fund: General Fund}
+  - {code: cert, office: county-clerk, label: "Certification, per document", amount: 5.00, unit: document, statute: "Local Gov't Code 118.011(a)(3)", fund: General Fund}
+  - {code: marriage_license, office: county-clerk, label: "Marriage license", amount: 81.00, unit: each, statute: "County fee schedule (confirm locally)", fund: General Fund}
+  - {code: marriage_license_twogether, office: county-clerk, label: "Marriage license with Twogether in Texas certificate", amount: 21.00, unit: each, statute: "County fee schedule (confirm locally)", fund: General Fund}
+  - {code: birth_cert, office: county-clerk, label: "Certified birth certificate", amount: 23.00, unit: each, statute: "County fee schedule (confirm locally)", fund: General Fund}
+  - {code: ossf_permit, office: environmental-health, label: "On-site sewage facility permit", amount: 0.00, unit: each, statute: "County order (enter local amount)", fund: General Fund}
+
+services:
+  - slug: property-records
+    office: county-clerk
+    title: Search property records
+    summary: Deeds, liens, plats and releases, free to search and download.
+    category: Records
+    featured: true
+    online_label: Search records
+    online_target: /records
+    keywords: deed lien plat release grantor grantee real property
+  - slug: certified-copy
+    office: county-clerk
+    title: Get a certified copy
+    summary: Order a certified copy of a recorded document, on paper or as a certified PDF.
+    category: Records
+    featured: true
+    who: Anyone.
+    needs: The instrument number, or the names on the document so you can find it.
+    online_label: Find the document
+    online_target: /records
+    keywords: certified copy deed document
+  - slug: recording
+    office: county-clerk
+    title: Record a document
+    summary: Record deeds, liens and other real property documents.
+    category: Records
+    who: Anyone may record in person or by mail. Electronic recording (eRecording) is limited by law to attorneys, lenders, title companies, state agencies and municipal clerks.
+    needs: The original signed and acknowledged document, with a return address and legible names under each signature.
+    in_person: Bring the document and payment to the County Clerk's recording counter.
+    keywords: record recording deed file erecording
+  - slug: pay-property-tax
+    office: tax-office
+    title: Pay property tax
+    summary: Look up your bill and pay in full or in part.
+    category: Pay
+    featured: true
+    online_label: Find my bill
+    online_target: /pay/property_tax
+    keywords: tax property pay bill
+  - slug: vehicle-registration
+    office: tax-office
+    title: Renew vehicle registration
+    summary: Renew online with the state's Texas by Texas service, or in person at the tax office.
+    category: Vehicles
+    featured: true
+    handoff: true
+    online_label: Go to Texas by Texas
+    online_target: https://txt.texas.gov/
+    needs: License plate number, the last 4 digits of the VIN, proof of liability insurance, a passing inspection if your county requires emissions testing, and the identification the state requires.
+    in_person: Title transfers and registrations past the online window are handled at the Tax Assessor-Collector's office.
+    keywords: car truck vehicle registration renew sticker title
+  - slug: vital-records
+    office: county-clerk
+    title: Birth and death certificates
+    summary: Order a certified copy of a Texas birth certificate, or a death certificate.
+    category: Apply or request
+    featured: true
+    who: The person named on the record or an immediate family member (parent, child, sibling, grandparent, spouse), or a legal representative with documentation.
+    needs: A current government-issued photo ID, the name, date and place of the event, and proof of relationship if you are not the person named.
+    online_label: Start an order
+    online_target: /apply/vital-record
+    keywords: birth death certificate vital record
+  - slug: marriage-license
+    office: county-clerk
+    title: Marriage license
+    summary: Start your application online, then visit the clerk to finish.
+    category: Apply or request
+    who: Two adults applying together. Applicants under 18 need a court order removing the disabilities of minority.
+    needs: Valid photo identification for each applicant. A Twogether in Texas certificate lowers the fee and waives the waiting period.
+    online_label: Start an application
+    online_target: /apply/marriage-license
+    keywords: marriage wedding license
+  - slug: jury-service
+    office: district-clerk
+    title: Respond to a jury summons
+    summary: Confirm, ask to postpone, or claim an exemption.
+    category: Courts and jury
+    online_label: Respond to my summons
+    online_target: /apply/jury-response
+    keywords: jury summons juror court
+  - slug: court-payments
+    office: district-clerk
+    title: Pay court fines and fees
+    summary: Look up a case or citation and pay.
+    category: Pay
+    online_label: Find my case
+    online_target: /pay/court
+    keywords: fine citation ticket court pay
+  - slug: e-filing
+    office: district-clerk
+    title: File court documents electronically
+    summary: Court e-filing is done through the state's eFileTexas system.
+    category: Courts and jury
+    handoff: true
+    online_label: Go to eFileTexas
+    online_target: https://www.efiletexas.gov/
+    keywords: efile court filing attorney
+  - slug: septic-permit
+    office: environmental-health
+    title: Septic (on-site sewage) permit
+    summary: Apply for a permit to install or repair a septic system.
+    category: Apply or request
+    online_label: Apply for a permit
+    online_target: /apply/ossf-permit
+    keywords: septic ossf sewage permit
+  - slug: public-information
+    office: commissioners-court
+    title: Request public information
+    summary: Submit and track an open records request.
+    category: Apply or request
+    featured: true
+    online_label: Make a request
+    online_target: /public-information
+    keywords: open records public information request pia foia
+  - slug: meetings
+    office: commissioners-court
+    title: Meetings and agendas
+    summary: Commissioners Court notices, agendas, video and minutes.
+    category: Transparency
+    featured: true
+    online_label: See meetings
+    online_target: /meetings
+    keywords: commissioners court meeting agenda minutes
+  - slug: voter-information
+    office: commissioners-court
+    title: Voter registration and elections
+    summary: Check your registration and find election information.
+    category: Transparency
+    handoff: true
+    online_label: Go to VoteTexas.gov
+    online_target: https://www.votetexas.gov/
+    keywords: vote voter election register polling
+
+# Special districts (water, fire, hospital, MUD, drainage, library and others)
+# and school districts use this smaller profile instead of the county lists.
+district_profile:
+  offices:
+    - slug: district-office
+      name: District Office
+      description: Billing, records and general questions.
+    - slug: board
+      name: Board of Directors
+      description: The district's governing body. Meetings, budget, tax rate.
+  services:
+    - {slug: pay-bill, office: district-office, title: Pay my bill, summary: Look up your account and pay., category: Pay, featured: true, online_label: Find my account, online_target: /pay/utility, keywords: bill water utility pay account}
+    - {slug: meetings, office: board, title: Meetings and agendas, summary: "Board notices, agendas, video and minutes.", category: Transparency, featured: true, online_label: See meetings, online_target: /meetings, keywords: board meeting agenda minutes}
+    - {slug: public-information, office: board, title: Request public information, summary: Submit and track an open records request., category: Apply or request, featured: true, online_label: Make a request, online_target: /public-information, keywords: open records public information request}
+  postings: [meeting-notice-agenda, tax-rate-budget, budget, conflict-disclosures, pia-method]
+  fees: []
+  forms: []
+
+forms:
+  vital-record:
+    title: Order a birth or death certificate
+    office: county-clerk
+    fee_code: birth_cert
+    intro: Staff check your ID before the certificate is printed. Uploaded IDs are deleted automatically after review.
+    fields:
+      - {name: record_type, label: "Which certificate?", type: radio, required: true, options: [Birth certificate, Death certificate]}
+      - {name: name_on_record, label: Full name on the record, type: text, required: true}
+      - {name: event_date, label: Date of birth or death, type: date, required: true}
+      - {name: event_place, label: City or county of birth or death, type: text, required: true}
+      - {name: relationship, label: Your relationship to the person named, type: select, required: true, options: [I am the person named, Parent, Child, Sibling, Grandparent, Spouse, Legal representative]}
+      - {name: requester_name, label: Your full name, type: text, required: true, autocomplete: name}
+      - {name: email, label: Email, type: email, required: true, autocomplete: email}
+      - {name: id_photo, label: Photo of your government-issued ID, type: file, required: true, accept: "image/*,application/pdf", capture: environment, sensitive: true, hint: On a phone, this opens your camera.}
+      - {name: delivery, label: "How should we get it to you?", type: radio, required: true, options: [Mail it to me, I will pick it up]}
+      - {name: mailing_address, label: Mailing address, type: textarea, required: false, hint: Required if you chose mail.}
+  marriage-license:
+    title: Marriage license pre-application
+    office: county-clerk
+    intro: Both applicants must still appear before the clerk to sign and take the oath. This saves time at the counter.
+    fields:
+      - {name: applicant_1, label: First applicant's full legal name, type: text, required: true}
+      - {name: applicant_2, label: Second applicant's full legal name, type: text, required: true}
+      - {name: email, label: Email, type: email, required: true, autocomplete: email}
+      - {name: phone, label: Phone, type: tel, required: false, autocomplete: tel}
+      - {name: twogether, label: "Do you have a Twogether in Texas certificate?", type: radio, required: true, options: ["Yes", "No"]}
+      - {name: preferred_date, label: Preferred day to visit the clerk, type: date, required: false}
+  jury-response:
+    title: Respond to a jury summons
+    office: district-clerk
+    fields:
+      - {name: juror_number, label: Juror number from your summons, type: text, required: true}
+      - {name: full_name, label: Full name, type: text, required: true, autocomplete: name}
+      - {name: email, label: Email, type: email, required: true, autocomplete: email}
+      - {name: response, label: Your response, type: radio, required: true, options: [I will serve on the date shown, I need to postpone, I am claiming an exemption, I believe I am disqualified]}
+      - {name: details, label: Details, type: textarea, required: false, hint: For a postponement, give dates you can serve. For an exemption, give the reason.}
+  ossf-permit:
+    title: Septic (on-site sewage facility) permit application
+    office: environmental-health
+    fee_code: ossf_permit
+    fields:
+      - {name: applicant, label: Applicant name, type: text, required: true, autocomplete: name}
+      - {name: email, label: Email, type: email, required: true, autocomplete: email}
+      - {name: phone, label: Phone, type: tel, required: true, autocomplete: tel}
+      - {name: site_address, label: Property address, type: textarea, required: true}
+      - {name: property_id, label: Appraisal district property ID, type: text, required: false}
+      - {name: work, label: Type of work, type: radio, required: true, options: [New system, Repair, Modification]}
+      - {name: plans, label: Site plan and design (PDF), type: file, required: false, accept: "application/pdf,image/*"}

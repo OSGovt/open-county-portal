@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="stack">
+  <section aria-labelledby="hero-h">
+    <h1 id="hero-h">What do you need to do today?</h1>
+    <form class="inline-form" action="/search" method="get" role="search">
+      <div class="field grow">
+        <label for="q">Search services and records</label>
+        <span class="hint" id="q-hint">Try a name, an instrument number, or a task like "certified copy"</span>
+        <input type="search" id="q" name="q" aria-describedby="q-hint">
+      </div>
+      <button class="btn" type="submit">Search</button>
+    </form>
+  </section>
+  {% if featured %}
+  <section aria-labelledby="tasks-h">
+    <h2 id="tasks-h">Popular tasks</h2>
+    <ul class="grid plain" style="margin: 0">
+      {% for s in featured %}
+      <li style="margin: 0"><a class="tile" href="{{ s.online_target if (s.online_target and not s.handoff and s.online_target.startswith('/')) else '/services/' ~ s.slug }}">
+        <strong>{{ s.title }}</strong><span>{{ s.summary }}</span></a></li>
+      {% endfor %}
+    </ul>
+    <p style="margin-top: 1rem"><a href="/services">See every service</a></p>
+  </section>
+  {% endif %}
+  {% if next_meeting %}
+  <section class="card" aria-labelledby="meet-h">
+    <h2 id="meet-h">Next meeting: {{ next_meeting.title }}</h2>
+    <p>{{ next_meeting.starts_at|localtime }}{% if next_meeting.location %} · {{ next_meeting.location }}{% endif %}</p>
+    {% if next_meeting.posted_at %}<p class="muted small">Notice posted {{ next_meeting.posted_at|localtime }}</p>{% endif %}
+    <a class="btn secondary" href="/meetings/{{ next_meeting.id }}">View the agenda</a>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

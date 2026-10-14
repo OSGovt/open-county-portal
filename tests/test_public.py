@@ -1,0 +1,101 @@
+"""Public website: every page renders, search works, forms validate."""
+from __future__ import annotations
+
+import pytest
+
+from .conftest import csrf
+
+PAGES = ["/", "/services", "/services/property-records", "/services/vehicle-registration", "/offices",
+         "/offices/county-clerk", "/records", "/records?name=resident", "/records/2026-004812", "/pay",
+         "/pay/property_tax", "/pay/property_tax?q=R000123", "/meetings", "/notices", "/public-information",
+         "/public-information/archive", "/apply/vital-record", "/apply/jury-response", "/records/redaction-request",
+         "/accessibility", "/data", "/cart", "/search?q=deed", "/sitemap.xml", "/robots.txt", "/theme.css", "/healthz"]
+
+
+@pytest.mark.parametrize("path", PAGES)
+def test_page_renders(client, path):
+    r = client.get(path)
+    assert r.status_code == 200, f"{path}: {r.status_code} {r.text[:500]}"
+
+
+def test_html_basics(client):
+    html = client.get("/").text
+    assert '<html lang="en">' in html
+    assert 'href="#main"' in html and 'id="main"' in html
+    assert "<title>" in html and "Test County" in html
+
+
+def test_unknown_page_is_friendly_404(client):
+    r = client.get("/no-such-page")
+    assert r.status_code == 404
+    assert "find that page" in r.text and "<h1>" in r.text
+
+
+def test_records_search_finds_party(client):
+    r = client.get("/records?name=homeowner")
+    assert "2026-004355" in r.text and "2024-002217" in r.text
+
+
+def test_records_search_requires_something(client):
+    r = client.get("/records?name=&doc_type=")
+    assert r.status_code == 200
+
+
+def test_records_bad_date_shows_error(client):
+    r = client.get("/records?name=x&date_from=notadate")
+    assert "Enter the start date" in r.text
+
+
+def test_page_image_and_pdf(client):
+    r = client.get("/records/2026-004812/pages/1.png")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+    r = client.get("/records/2026-004812/download.pdf")
+    assert r.status_code == 200 and r.content[:4] == b"%PDF"
+
+
+def test_global_search_exact_instrument_redirects(client):
+    r = client.get("/search?q=2026-004812", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].endswith("/records/2026-004812")
+
+
+def test_pia_validation_and_submit(client):
+    token = csrf(client, "/public-information")
+    r = client.post("/public-information", data={"_csrf": token, "description": "", "delivery": "email", "email": ""})
+    assert r.status_code == 400 and "Describe the records" in r.text and 'role="alert"' in r.text
+    r = client.post("/public-information", data={"_csrf": token, "description": "Road maintenance logs for 2025",
+                                                  "delivery": "email", "email": "res@example.com"})
+    assert r.status_code == 200 and "PIR-" in r.text
+
+
+def test_csrf_required(client):
+    r = client.post("/public-information", data={"description": "x", "delivery": "email", "email": "a@b.co"})
+    assert r.status_code == 400
+
+
+def test_form_without_fee(client):
+    token = csrf(client, "/apply/jury-response")
+    r = client.post("/apply/jury-response", data={"_csrf": token, "juror_number": "123", "full_name": "Pat Lee",
+                                                  "email": "pat@example.com", "response": "I need to postpone",
+                                                  "details": "Can serve in December"})
+    assert r.status_code == 200 and "AP-" in r.text
+
+
+def test_form_errors_are_linked(client):
+    token = csrf(client, "/apply/jury-response")
+    r = client.post("/apply/jury-response", data={"_csrf": token})
+    assert r.status_code == 400
+    assert 'href="#f-juror_number"' in r.text and 'aria-invalid="true"' in r.text
+
+
+def test_redaction_request(client):
+    token = csrf(client, "/records/redaction-request")
+    r = client.post("/records/redaction-request", data={"_csrf": token, "requester_name": "Officer Sample",
+                                                         "category": "Peace officer", "email": "o@example.gov",
+                                                         "search_names": "SAMPLE OFFICER"}, follow_redirects=True)
+    assert r.status_code == 200 and "RR-" in r.text
+
+
+def test_security_headers(client):
+    r = client.get("/")
+    assert "frame-ancestors 'none'" in r.headers["content-security-policy"]
+    assert r.headers["x-content-type-options"] == "nosniff"

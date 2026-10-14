@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Your cart</h1>
+{% for p in priced.problems %}<p class="flash warning">{{ p }}</p>{% endfor %}
+{% if not priced.lines %}
+<div class="card"><p>Your cart is empty.</p><a class="btn secondary" href="/services">Find a service</a></div>
+{% else %}
+<ul class="plain">
+  {% for group in grouped %}
+  <li class="card">
+    {% for l in group %}
+    <div class="cluster" style="justify-content: space-between">
+      <div><strong>{{ l.label }}</strong>{% if l.qty > 1 %} <span class="muted">({{ l.qty }} × {{ l.unit_cents|money }})</span>{% endif %}
+        <br><span class="muted small">{{ l.office_name }}{% if l.statute %} · {{ l.statute }}{% endif %}</span></div>
+      <strong>{{ l.amount_cents|money }}</strong>
+    </div>
+    {% endfor %}
+    <form method="post" action="/cart/remove" style="margin-top: 0.5rem">
+      <input type="hidden" name="_csrf" value="{{ csrf }}"><input type="hidden" name="item_id" value="{{ group[0].item_id }}">
+      <button class="linkbutton" type="submit">Remove<span class="visually-hidden"> {{ group[0].label }}</span></button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+<div class="card" style="margin-top: 1rem">
+  <div class="totals"><span>Subtotal</span><strong class="num">{{ priced.subtotal|money }}</strong></div>
+  <p class="muted small" style="margin-top: 0.5rem">Any processing fee for your payment method is shown at checkout, before you pay.</p>
+  <a class="btn" href="/checkout">Continue to checkout</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Search</h1>
+<form class="inline-form" action="/search" method="get" role="search" style="margin-bottom: 1.5rem">
+  <div class="field grow"><label for="q">Search services and records</label>
+    <input type="search" id="q" name="q" value="{{ q }}"></div>
+  <button class="btn" type="submit">Search</button>
+</form>
+{% if q %}
+  {% if not services_found and not pages_found and not records_found %}
+  <p>Nothing matched "{{ q }}". Check the spelling, try fewer words, or <a href="/services">browse all services</a>.</p>
+  {% endif %}
+  {% if services_found %}
+  <section aria-labelledby="sv-h"><h2 id="sv-h">Services</h2>
+    <ul>{% for s in services_found %}<li><a href="/services/{{ s.slug }}">{{ s.title }}</a> — {{ s.summary }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+  {% if records_found %}
+  <section aria-labelledby="rc-h"><h2 id="rc-h">Property records naming "{{ q }}"</h2>
+    <ul>{% for r in records_found %}<li><a href="/records/{{ r.instrument_number }}">{{ r.doc_type }} {{ r.instrument_number }}</a>, recorded {{ r.recorded_date|longdate }}</li>{% endfor %}</ul>
+    <p><a href="/records?name={{ q|urlencode }}">See all property records for "{{ q }}"</a></p>
+  </section>
+  {% endif %}
+  {% if pages_found %}
+  <section aria-labelledby="pg-h"><h2 id="pg-h">Pages</h2>
+    <ul>{% for p in pages_found %}<li><a href="/pages/{{ p.slug }}">{{ p.title }}</a></li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+{% endif %}
+{% endblock %}

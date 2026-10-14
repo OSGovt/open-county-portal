@@ -1,0 +1,54 @@
+{# Accessible form building blocks. Every input gets a visible label, an
+   optional hint, an inline error tied by aria-describedby, and aria-invalid. #}
+
+{% macro error_summary(errors) -%}
+{% if errors %}
+<div class="error-summary" role="alert" tabindex="-1" id="error-summary">
+  <h2>There {{ 'is a problem' if errors|length == 1 else 'are ' ~ errors|length ~ ' problems' }}</h2>
+  <ul>
+    {% for name, message in errors.items() %}<li><a href="#f-{{ name }}">{{ message }}</a></li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro field(f, value='', errors={}) -%}
+{% set fid = 'f-' ~ f.name %}
+{% set err = errors.get(f.name) %}
+{% set described = [] %}
+{% if f.hint %}{% set _ = described.append(fid ~ '-hint') %}{% endif %}
+{% if err %}{% set _ = described.append(fid ~ '-err') %}{% endif %}
+{% if f.type in ('radio', 'checkbox') and f.options %}
+<fieldset class="field" id="{{ fid }}"{% if described %} aria-describedby="{{ described|join(' ') }}"{% endif %}>
+  <legend>{{ f.label }}{% if not f.required %} <span class="hint" style="display: inline">(optional)</span>{% endif %}</legend>
+  {% if f.hint %}<span class="hint" id="{{ fid }}-hint">{{ f.hint }}</span>{% endif %}
+  {% if err %}<span class="field-error" id="{{ fid }}-err">{{ err }}</span>{% endif %}
+  {% for opt in f.options %}
+  <label class="choice"><input type="{{ f.type }}" name="{{ f.name }}" value="{{ opt }}"
+    {% if (value is string and value == opt) or (value is not string and value and opt in value) %}checked{% endif %}
+    {% if f.required and f.type == 'radio' %}required{% endif %}> <span>{{ opt }}</span></label>
+  {% endfor %}
+</fieldset>
+{% else %}
+<div class="field">
+  <label for="{{ fid }}">{{ f.label }}{% if not f.required %} <span class="hint" style="display: inline">(optional)</span>{% endif %}</label>
+  {% if f.hint %}<span class="hint" id="{{ fid }}-hint">{{ f.hint }}</span>{% endif %}
+  {% if err %}<span class="field-error" id="{{ fid }}-err">{{ err }}</span>{% endif %}
+  {% set common %}id="{{ fid }}" name="{{ f.name }}"{% if f.required %} required aria-required="true"{% endif %}{% if err %} aria-invalid="true"{% endif %}{% if described %} aria-describedby="{{ described|join(' ') }}"{% endif %}{% if f.autocomplete %} autocomplete="{{ f.autocomplete }}"{% endif %}{% endset %}
+  {% if f.type == 'textarea' %}
+  <textarea {{ common }} rows="5">{{ value or '' }}</textarea>
+  {% elif f.type == 'select' %}
+  <select {{ common }}>
+    <option value="">Choose one</option>
+    {% for opt in f.options %}<option value="{{ opt }}"{% if value == opt %} selected{% endif %}>{{ opt }}</option>{% endfor %}
+  </select>
+  {% elif f.type == 'file' %}
+  <input type="file" {{ common }}{% if f.accept %} accept="{{ f.accept }}"{% endif %}{% if f.capture %} capture="{{ f.capture }}"{% endif %}>
+  {% else %}
+  <input type="{{ f.type or 'text' }}" {{ common }} value="{{ value or '' }}"{% if f.inputmode %} inputmode="{{ f.inputmode }}"{% endif %}{% if f.type == 'number' %} step="any"{% endif %}>
+  {% endif %}
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro csrf_input(csrf) -%}<input type="hidden" name="_csrf" value="{{ csrf }}">{%- endmacro %}

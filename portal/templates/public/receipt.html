@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width: 46rem" class="stack">
+  {% if o.status == 'paid' %}
+  <div class="flash success" style="font-size: 1.1rem"><h1 style="font-size: 1.6rem; margin: 0">Payment received</h1></div>
+  {% elif o.status == 'pending' %}
+  <h1>Order saved, not yet paid</h1>
+  <p>Bring order number <strong>{{ o.number }}</strong> to the office, or include it with a mailed payment.</p>
+  {% else %}
+  <h1>Order {{ o.number }}: {{ o.status }}</h1>
+  {% endif %}
+  <section class="card" aria-labelledby="r-h">
+    <h2 id="r-h">Receipt {{ o.number }}</h2>
+    <p class="muted">{{ o.created_at|localtime }}{% if o.paid_at %} · paid {{ o.paid_at|localtime }}{% endif %}</p>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th scope="col">Item</th><th scope="col" class="num">Amount</th></tr></thead>
+        <tbody>
+          {% for l in o.lines %}<tr><td>{{ l.label }}{% if l.qty > 1 %} ({{ l.qty }} × {{ l.unit_cents|money }}){% endif %}</td><td class="num">{{ l.amount_cents|money }}</td></tr>{% endfor %}
+          {% if o.fee_cents %}<tr><td>{{ fee_label }}</td><td class="num">{{ o.fee_cents|money }}</td></tr>{% endif %}
+          <tr><th scope="row">Total</th><td class="num"><strong>{{ o.total_cents|money }}</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    {% for t in o.tenders %}<p class="small muted" style="margin: 0.5rem 0 0">Paid by {{ t.kind }}{% if t.detail %} · {{ t.detail }}{% endif %}</p>{% endfor %}
+  </section>
+  {% if split|length > 1 %}
+  <section class="card" aria-labelledby="s-h">
+    <h2 id="s-h">Where your payment goes</h2>
+    <p>One charge appears on your statement. Each office receives its own share:</p>
+    <ul>{% for name, amt in split %}<li>{{ name }}: {{ amt|money }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+  {% if o.lines|selectattr('fulfil_status', 'equalto', 'pending')|list %}
+  <p>Certified copies are prepared by staff. We'll email you when yours is ready.</p>
+  {% endif %}
+  <div class="cluster no-print"><a class="btn secondary" href="/receipt/{{ o.number }}?t={{ o.token }}&amp;print=1">Printable receipt</a><a class="btn" href="/">Back to home</a></div>
+  <p class="small muted">Use your browser's Print command to save this receipt as a PDF.</p>
+</div>
+{% endblock %}

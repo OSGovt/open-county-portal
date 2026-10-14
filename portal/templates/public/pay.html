@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Pay</h1>
+{% if kinds %}
+<ul class="grid plain">
+  {% for code, label in kinds %}<li style="margin: 0"><a class="tile" href="/pay/{{ code }}"><strong>{{ label }}</strong><span>Look up your bill and pay in full or in part.</span></a></li>{% endfor %}
+</ul>
+{% else %}
+<p>Online bill payment isn't set up yet. Contact the office that sent your bill.</p>
+{% endif %}
+<p style="margin-top: 1.5rem">Looking for a copy of a recorded document? <a href="/records">Search property records</a>.</p>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width: 40rem" class="stack">
+  <div class="flash success"><h1 style="font-size: 1.6rem; margin: 0">Request {{ number }} received</h1></div>
+  {% if law.response_rule %}<p>{{ law.response_rule }}</p>{% endif %}
+  <p>Keep your request number, <strong>{{ number }}</strong>, if you need to contact the office about it.</p>
+  <a class="btn" href="/">Back to home</a>
+</div>
+{% endblock %}

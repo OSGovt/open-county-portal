@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<article class="stack" style="max-width: 48rem">
+  <h1>{{ s.title }}</h1>
+  {% if s.summary %}<p style="font-size: 1.15rem">{{ s.summary }}</p>{% endif %}
+  {% if s.who %}<section class="card"><h2>Who can do this</h2>{{ s.who|markdown }}</section>{% endif %}
+  {% if s.needs %}<section class="card"><h2>What you need</h2>{{ s.needs|markdown }}</section>{% endif %}
+  {% if s.cost %}<section class="card"><h2>Cost</h2>{{ s.cost|markdown }}</section>{% endif %}
+  {% if s.timing %}<section class="card"><h2>How long it takes</h2>{{ s.timing|markdown }}</section>{% endif %}
+  {% if s.body %}<section>{{ s.body|markdown }}</section>{% endif %}
+  {% if s.online_target %}
+  <section class="card">
+    <h2>Do it online</h2>
+    {% if s.handoff %}
+    <p>This is handled by another government website. You will leave {{ site.jurisdiction_name }}'s site.</p>
+    {% endif %}
+    <a class="btn" href="{{ s.online_target }}">{{ s.online_label or 'Start' }}</a>
+  </section>
+  {% endif %}
+  {% if s.in_person or office %}
+  <section class="card">
+    <h2>Do it in person</h2>
+    {% if s.in_person %}{{ s.in_person|markdown }}{% endif %}
+    {% if office %}<p><a href="/offices/{{ office.slug }}">{{ office.name }}: hours and location</a></p>{% endif %}
+  </section>
+  {% endif %}
+</article>
+{% endblock %}

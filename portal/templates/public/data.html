@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<article class="stack" style="max-width: 52rem">
+  <h1>Open data and API</h1>
+  <p style="font-size: 1.15rem">Everything {{ site.jurisdiction_name }} publishes here is free to use through this website's open API and daily bulk files. No account, key, fee, or contract is required.</p>
+  <section class="card"><h2>What's available</h2>
+    <ul>
+      <li>Property records index and document page images: <code>/api/v1/instruments</code></li>
+      <li>Meetings, agendas and minutes: <code>/api/v1/meetings</code></li>
+      <li>Public notices and required postings: <code>/api/v1/postings</code></li>
+      <li>Fee schedule: <code>/api/v1/fees</code></li>
+      <li>Services and offices: <code>/api/v1/services</code>, <code>/api/v1/offices</code></li>
+      <li>Released public information responses: <code>/api/v1/public-information</code></li>
+      <li>Everything changed since a date: <code>/api/v1/changes?since=2026-01-01T00:00:00Z</code></li>
+    </ul>
+  </section>
+  <section class="card"><h2>Bulk files</h2>
+    <p>Daily files in CSV and JSON are listed at <a href="/api/v1/bulk">/api/v1/bulk</a>. Please use them instead of paging through the live API for large downloads.</p>
+  </section>
+  <section class="card"><h2>Machine-readable descriptions</h2>
+    <ul>
+      <li>API description (OpenAPI): <a href="/api/v1/openapi.json">/api/v1/openapi.json</a></li>
+      <li>Data catalog for Data.gov (DCAT-US 3.0): <a href="/data.json">/data.json</a></li>
+      <li>Data catalog in DCAT-US 1.1: <a href="/data-v1.1.json">/data-v1.1.json</a></li>
+    </ul>
+  </section>
+  <section class="card"><h2>Limits and terms</h2>
+    <p>The live API allows {{ 120 }} requests a minute per address without a key, and more with a free key. {{ od.data_terms }}</p>
+    <p>Information that the law keeps confidential, including redacted details and residents' payment and personal information, is never published.</p>
+  </section>
+</article>
+{% endblock %}

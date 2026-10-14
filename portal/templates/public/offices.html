@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Offices and hours</h1>
+<ul class="grid plain">
+  {% for o in offices %}
+  <li class="card" style="margin: 0">
+    <h2 style="font-size: 1.2rem"><a href="/offices/{{ o.slug }}">{{ o.name }}</a></h2>
+    {% if o.official %}<p class="muted">{{ o.official }}</p>{% endif %}
+    {% if o.description %}<p>{{ o.description }}</p>{% endif %}
+    {% if o.hours %}<p style="white-space: pre-line"><strong>Hours:</strong> {{ o.hours }}</p>{% endif %}
+    {% if o.phone %}<p><a href="tel:{{ o.phone|replace(' ', '') }}">{{ o.phone }}</a></p>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

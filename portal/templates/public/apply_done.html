@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width: 40rem" class="stack">
+  <div class="flash success"><h1 style="font-size: 1.6rem; margin: 0">{{ form_def.title }}: received</h1></div>
+  <p>Your reference number is <strong>{{ number }}</strong>. Keep it in case you need to contact the office.</p>
+  <p>If you gave an email address, a confirmation is on its way.</p>
+  <a class="btn" href="/">Back to home</a>
+</div>
+{% endblock %}

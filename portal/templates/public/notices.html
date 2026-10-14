@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Public notices and required postings</h1>
+<p>Notices the law requires {{ site.jurisdiction_name }} to publish. Meeting agendas are on the <a href="/meetings">meetings page</a>.</p>
+{% if not rows %}<p>No notices are posted right now.</p>{% endif %}
+<ul class="plain">
+  {% for r in rows %}
+  <li class="card">
+    <h2 style="font-size: 1.2rem">{{ r.title }}</h2>
+    <p class="muted small" style="margin: 0 0 0.5rem">Posted {{ r.posted_at|localtime }}{% if r.rule_code and rules.get(r.rule_code) %} · Required by {{ rules[r.rule_code].authority }}{% endif %}{% if r.remove_after %} · Posted through {{ r.remove_after|longdate }}{% endif %}</p>
+    {% if r.body %}{{ r.body|markdown }}{% endif %}
+    {% if r.file_id %}<p><a href="/files/{{ r.file_id }}">{{ r.file_name or 'Open the attached document' }}</a></p>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

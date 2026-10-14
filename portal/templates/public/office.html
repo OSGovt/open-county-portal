@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="split">
+  <div class="main stack">
+    <h1>{{ o.name }}</h1>
+    {% if o.official %}<p class="muted">{{ o.official }}</p>{% endif %}
+    {% if o.description %}{{ o.description|markdown }}{% endif %}
+    {% if office_services %}
+    <section aria-labelledby="os-h"><h2 id="os-h">Services</h2>
+      <ul>{% for s in office_services %}<li><a href="/services/{{ s.slug }}">{{ s.title }}</a></li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+  </div>
+  <aside class="side card" aria-label="Contact">
+    <h2>Contact</h2>
+    {% if o.hours %}<p style="white-space: pre-line"><strong>Hours</strong><br>{{ o.hours }}</p>{% endif %}
+    {% if o.address %}<p style="white-space: pre-line"><strong>Address</strong><br>{{ o.address }}</p>{% endif %}
+    {% if o.phone %}<p><strong>Phone</strong><br><a href="tel:{{ o.phone|replace(' ', '') }}">{{ o.phone }}</a></p>{% endif %}
+    {% if o.email %}<p><strong>Email</strong><br><a href="mailto:{{ o.email }}">{{ o.email }}</a></p>{% endif %}
+  </aside>
+</div>
+{% endblock %}

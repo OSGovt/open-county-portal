@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<article style="max-width: 48rem">
+  <h1>{{ p.title }}</h1>
+  {{ p.body|markdown }}
+  <p class="muted small">Last updated {{ p.updated_at|longdate }}</p>
+</article>
+{% endblock %}

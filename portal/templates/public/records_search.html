@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import error_summary %}
+{% block content %}
+<h1>Search property records</h1>
+<p>Searching, viewing and downloading are free. Certified copies are a paid service.</p>
+{{ error_summary(errors) }}
+<form action="/records" method="get" class="card" novalidate>
+  <div class="split">
+    <div class="main">
+      <div class="field">
+        <label for="f-name">Name</label>
+        <span class="hint" id="f-name-hint">A person or company, as grantor or grantee. Part of a name works.</span>
+        {% if errors.name %}<span class="field-error" id="f-name-err">{{ errors.name }}</span>{% endif %}
+        <input type="text" id="f-name" name="name" value="{{ q.name }}" autocomplete="off"
+               aria-describedby="f-name-hint{% if errors.name %} f-name-err{% endif %}"{% if errors.name %} aria-invalid="true"{% endif %}>
+      </div>
+      <fieldset class="field">
+        <legend>Name appears as</legend>
+        <label class="choice"><input type="radio" name="role" value="any"{% if q.role not in ('grantor', 'grantee') %} checked{% endif %}> Either</label>
+        <label class="choice"><input type="radio" name="role" value="grantor"{% if q.role == 'grantor' %} checked{% endif %}> Grantor (from)</label>
+        <label class="choice"><input type="radio" name="role" value="grantee"{% if q.role == 'grantee' %} checked{% endif %}> Grantee (to)</label>
+      </fieldset>
+    </div>
+    <div class="side">
+      <div class="field">
+        <label for="f-doc_type">Instrument type</label>
+        <select id="f-doc_type" name="doc_type">
+          <option value="">Any type</option>
+          {% for t in doc_types %}<option value="{{ t }}"{% if q.doc_type == t %} selected{% endif %}>{{ t }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-date_from">Recorded on or after</label>
+        {% if errors.date_from %}<span class="field-error" id="f-date_from-err">{{ errors.date_from }}</span>{% endif %}
+        <input type="date" id="f-date_from" name="date_from" value="{{ raw.date_from }}"{% if errors.date_from %} aria-invalid="true" aria-describedby="f-date_from-err"{% endif %}>
+      </div>
+      <div class="field">
+        <label for="f-date_to">Recorded on or before</label>
+        {% if errors.date_to %}<span class="field-error" id="f-date_to-err">{{ errors.date_to }}</span>{% endif %}
+        <input type="date" id="f-date_to" name="date_to" value="{{ raw.date_to }}"{% if errors.date_to %} aria-invalid="true" aria-describedby="f-date_to-err"{% endif %}>
+      </div>
+    </div>
+  </div>
+  <details>
+    <summary style="min-height: 44px; display: flex; align-items: center; font-weight: 700; cursor: pointer">More ways to search</summary>
+    <div class="grid" style="margin-top: 0.75rem">
+      <div class="field"><label for="f-instrument_number">Instrument number</label><input type="text" id="f-instrument_number" name="instrument_number" value="{{ q.instrument_number }}"></div>
+      <div class="field"><label for="f-book">Volume or book</label><input type="text" id="f-book" name="book" value="{{ q.book }}"></div>
+      <div class="field"><label for="f-page_ref">Page</label><input type="text" id="f-page_ref" name="page_ref" value="{{ raw.page_ref }}"></div>
+      <div class="field"><label for="f-legal">Legal description contains</label>
+        <span class="hint" id="f-legal-hint">Subdivision, lot, block, abstract or survey</span>
+        <input type="text" id="f-legal" name="legal" value="{{ q.legal }}" aria-describedby="f-legal-hint"></div>
+    </div>
+  </details>
+  <button class="btn" type="submit" style="margin-top: 0.75rem">Search</button>
+</form>
+{% if notice %}<p class="notice" style="margin-top: 1rem">{{ notice }}</p>{% endif %}
+
+{% if searched and not errors %}
+<section aria-labelledby="results-h" style="margin-top: 1.5rem">
+  <h2 id="results-h">{{ total }} {{ 'record' if total == 1 else 'records' }} found</h2>
+  {% if not results %}
+  <p>No records match. Check the spelling, use part of the name, or widen the dates.</p>
+  {% else %}
+  <ul class="plain">
+    {% for r in results %}
+    <li class="card">
+      <h3 style="margin-bottom: 0.3rem"><a href="/records/{{ r.instrument_number }}">{{ r.doc_type }} {{ r.instrument_number }}</a></h3>
+      <p style="margin: 0">{{ r.grantors|join('; ') or 'No grantor listed' }} <span class="muted">to</span> {{ r.grantees|join('; ') or 'No grantee listed' }}</p>
+      <p class="muted small" style="margin: 0.3rem 0 0">Recorded {{ r.recorded_date|longdate or 'date not recorded' }}
+        {% if r.book %} · Volume {{ r.book }}{% if r.page %}, page {{ r.page }}{% endif %}{% endif %}
+        · {{ r.page_count }} {{ 'page' if r.page_count == 1 else 'pages' }}
+        {% if r.legal_description %} · {{ r.legal_description[:120] }}{% endif %}</p>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if pages > 1 %}
+  <nav aria-label="Results pages" class="pager" style="margin-top: 1rem">
+    {% if page > 1 %}<a class="btn secondary" href="/records?{{ query_string }}&page={{ page - 1 }}">Previous<span class="visually-hidden"> page of results</span></a>{% endif %}
+    <span>Page {{ page }} of {{ pages }}</span>
+    {% if page < pages %}<a class="btn secondary" href="/records?{{ query_string }}&page={{ page + 1 }}">Next<span class="visually-hidden"> page of results</span></a>{% endif %}
+  </nav>
+  {% endif %}
+  {% endif %}
+</section>
+{% endif %}
+<p style="margin-top: 2rem" class="small"><a href="/records/redaction-request">Are you a peace officer, judge, or other protected person? Ask to remove your personal information from online records.</a></p>
+{% endblock %}

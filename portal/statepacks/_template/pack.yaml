@@ -1,0 +1,93 @@
+# Template for a new state pack.
+#
+# Copy this folder to portal/statepacks/<two-letter state code>/ and fill it in.
+# Read docs/state-packs/writing-a-state-pack.md first. Rules:
+#   - Every rule cites its source (statute, rule, or official guidance).
+#   - Fee amounts are templates; counties confirm their own before go-live.
+#   - status stays "draft" until a named reviewer with expertise in this
+#     state's county law signs REVIEW.md.
+# The Texas pack (../tx/pack.yaml) is the worked example of every section.
+
+pack: xx
+name: State Name
+version: "0.1"
+status: draft
+reviewed_by: null
+
+sources: []
+  # - title: Statute or guidance title
+  #   url: https://...
+
+offices: []
+  # - slug: county-clerk
+  #   name: County Clerk
+  #   description: What the office does, in one sentence residents understand.
+
+records:
+  online_notice: ""            # any notice state law requires on an online records database
+  online_notice_source: ""
+  copy_fees_reach_free_downloads: undecided
+  redaction:
+    law: ""
+    fields: []
+    categories: []
+    form_note: ""
+  erecording:
+    allowed_submitters: ""
+    note: ""
+
+public_information:
+  law_name: ""                 # e.g. the state's public records act and its citation
+  intro: ""
+  response_rule: ""
+  business_days: null
+
+payments:
+  card_fee_law: ""             # what law lets the county charge a card fee, and who sets it
+  dishonored_card_law: ""
+
+postings: []
+  # - code: meeting-notice-agenda
+  #   title: Meeting notice and agenda
+  #   authority: (citation)
+  #   cadence: per_meeting      # per_meeting | annual | continuous | per_election
+  #   office: commissioners-court
+  #   max_age_days: 400         # optional: flag when the newest posting is older than this
+  #   automatic: false          # true if the portal satisfies it by itself
+
+handoffs: []
+  # - code: vehicle-renewal
+  #   title: The state's online vehicle renewal
+  #   url: https://...
+
+fees: []
+  # - {code: copy_page, office: county-clerk, label: "Copy, per page", amount: 1.00, unit: page, statute: "(citation)", fund: General Fund}
+
+services: []
+  # - slug: property-records
+  #   office: county-clerk
+  #   title: Search property records
+  #   summary: One sentence.
+  #   category: Records
+  #   featured: true
+  #   online_label: Search records
+  #   online_target: /records      # an internal path, or https:// for a hand-off
+  #   handoff: false
+  #   who: / needs: / cost: / timing: / in_person: / keywords:
+
+district_profile:
+  offices: []
+  services: []
+  postings: []
+  fees: []
+  forms: []
+
+forms: {}
+  # form-slug:
+  #   title: Form title
+  #   office: county-clerk
+  #   fee_code: optional fee added to the cart on submit
+  #   intro: optional paragraph
+  #   fields:
+  #     - {name: field_name, label: Visible label, type: text|email|tel|date|textarea|select|radio|checkbox|file, required: true,
+  #        options: [for select and radio], hint: optional help text, autocomplete: optional, accept: for files, capture: environment, sensitive: true}

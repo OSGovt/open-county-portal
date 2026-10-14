@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "partials/forms.html" import error_summary %}
+{% block content %}
+<div style="max-width: 46rem">
+<h1>Request public information</h1>
+{% if law.intro %}<p>{{ law.intro }}</p>{% endif %}
+{% if law.response_rule %}<p>{{ law.response_rule }}</p>{% endif %}
+<p><a href="/public-information/archive">See information already released</a>. What you need may already be there.</p>
+{{ error_summary(errors) }}
+<form method="post" action="/public-information" class="card" novalidate>
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <div class="field">
+    <label for="f-office_slug">Which office has the records? <span class="hint" style="display: inline">(optional)</span></label>
+    <select id="f-office_slug" name="office_slug">
+      <option value="">Not sure</option>
+      {% for o in office_rows %}<option value="{{ o.slug }}"{% if values.office_slug == o.slug %} selected{% endif %}>{{ o.name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-description">Describe the records you want</label>
+    <span class="hint" id="f-description-hint">Dates, names and kinds of records help the office find them faster.</span>
+    {% if errors.description %}<span class="field-error" id="f-description-err">{{ errors.description }}</span>{% endif %}
+    <textarea id="f-description" name="description" aria-describedby="f-description-hint{% if errors.description %} f-description-err{% endif %}"{% if errors.description %} aria-invalid="true"{% endif %}>{{ values.description }}</textarea>
+  </div>
+  <fieldset class="field" id="f-delivery"{% if errors.delivery %} aria-describedby="f-delivery-err"{% endif %}>
+    <legend>How should we provide the records?</legend>
+    {% if errors.delivery %}<span class="field-error" id="f-delivery-err">{{ errors.delivery }}</span>{% endif %}
+    <label class="choice"><input type="radio" name="delivery" value="email"{% if values.delivery in (None, '', 'email') %} checked{% endif %}> Secure download link by email</label>
+    <label class="choice"><input type="radio" name="delivery" value="mail"{% if values.delivery == 'mail' %} checked{% endif %}> Paper copies by mail (copy charges may apply)</label>
+    <label class="choice"><input type="radio" name="delivery" value="inspect"{% if values.delivery == 'inspect' %} checked{% endif %}> Look at them in person</label>
+  </fieldset>
+  <div class="field"><label for="f-name">Your name <span class="hint" style="display: inline">(optional)</span></label>
+    <input type="text" id="f-name" name="name" autocomplete="name" value="{{ values.name }}"></div>
+  <div class="field">
+    <label for="f-email">Email</label>
+    {% if errors.email %}<span class="field-error" id="f-email-err">{{ errors.email }}</span>{% endif %}
+    <input type="email" id="f-email" name="email" autocomplete="email" value="{{ values.email }}"{% if errors.email %} aria-invalid="true" aria-describedby="f-email-err"{% endif %}>
+  </div>
+  <div class="field"><label for="f-phone">Phone <span class="hint" style="display: inline">(optional)</span></label>
+    <input type="tel" id="f-phone" name="phone" autocomplete="tel" value="{{ values.phone }}"></div>
+  <p class="muted small">You do not have to say why you want the records.</p>
+  <button class="btn" type="submit">Submit request</button>
+</form>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block head %}<meta name="robots" content="noindex"><script src="/static/staff.js" defer></script>{% endblock %}
+{% block content %}
+<nav aria-label="Staff console" class="card" style="padding: 0.25rem 1rem; margin-bottom: 1rem">
+  <ul class="staff-nav">
+    <li><a href="/staff">Dashboard</a></li>
+    {% if can('cashier', 'supervisor') %}<li><a href="/staff/counter">Counter</a></li>{% endif %}
+    {% if can('records') %}<li><a href="/staff/orders">Copy orders</a></li><li><a href="/staff/records">Records</a></li>{% endif %}
+    {% if can('pia') %}<li><a href="/staff/pia">Public information</a></li>{% endif %}
+    {% if can('applications') %}<li><a href="/staff/applications">Applications</a></li>{% endif %}
+    {% if can('content') %}<li><a href="/staff/content">Content</a></li>{% endif %}
+    {% if can('finance', 'supervisor') %}<li><a href="/staff/finance">Finance</a></li>{% endif %}
+    {% if can('admin') %}<li><a href="/staff/settings">Settings</a></li><li><a href="/staff/system">System</a></li>{% endif %}
+    <li><a href="/staff/help">Help</a></li>
+    <li><form method="post" action="/staff/logout" style="display: inline"><input type="hidden" name="_csrf" value="{{ csrf }}"><button class="linkbutton" type="submit">Sign out</button></form></li>
+  </ul>
+</nav>
+{% if test_mode %}<p class="banner" style="margin-bottom: 1rem"><strong>Test payments are on.</strong> No real money is being taken. An administrator can connect a processor under Settings, Payments.</p>{% endif %}
+{% if unconfirmed_fees and can('admin') %}<p class="flash warning" style="margin: 0 0 1rem">{{ unconfirmed_fees }} {{ 'fee has' if unconfirmed_fees == 1 else 'fees have' }} not been confirmed against your governing body's adopted fee schedule. <a href="/staff/content/fees">Review fees</a>.</p>{% endif %}
+<div id="session-warning" class="banner" role="alertdialog" aria-labelledby="sw-h" aria-describedby="sw-b" hidden style="margin-bottom: 1rem">
+  <strong id="sw-h">You'll be signed out in 5 minutes.</strong> <span id="sw-b">For security, idle staff sessions end after one hour.</span>
+  <button type="button" class="btn secondary" id="stay-signed-in">Stay signed in</button>
+</div>
+{% block staff %}{% endblock %}
+{% endblock %}

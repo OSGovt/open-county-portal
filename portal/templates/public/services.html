@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Services</h1>
+{% for group, items in groups.items() %}
+<section aria-labelledby="g-{{ loop.index }}" style="margin-bottom: 1.5rem">
+  <h2 id="g-{{ loop.index }}">{{ group }}</h2>
+  <ul class="grid plain">
+    {% for s in items %}<li style="margin: 0"><a class="tile" href="/services/{{ s.slug }}"><strong>{{ s.title }}</strong><span>{{ s.summary }}</span></a></li>{% endfor %}
+  </ul>
+</section>
+{% endfor %}
+{% endblock %}
