@@ -1,0 +1,125 @@
+# Checks the live Utopia County demo the way a visitor uses it, after every
+# deploy and once a night: a walk-through of whole tasks (records, payment, staff
+# sign-in) and the conformance suite (accessibility, API, data, catalog).
+# Any failure opens a GitHub issue labeled live-check; the next passing run
+# closes it. See docs/admin/hosted-demo.md.
+name: Live demo check
+
+on:
+  workflow_run:
+    workflows: [Deploy demo]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "23 9 * * *"   # 09:23 UTC, early morning in the US
+  workflow_dispatch:
+
+concurrency:
+  group: live-check
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  DEMO_URL: https://utopia.osgovt.com
+
+jobs:
+  check:
+    if: >-
+      github.repository_owner == 'OSGovt' &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Install the checkers
+        run: |
+          pip install -r conformance/requirements.txt
+          python -m playwright install --with-deps chromium
+          (cd conformance && npm ci --no-audit --no-fund)
+
+      - name: Walk through the demo
+        id: journey
+        continue-on-error: true
+        run: python conformance/demo_journey.py --url "$DEMO_URL" --summary journey.md
+
+      - name: Conformance suite
+        id: conformance
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python conformance/run.py --url "$DEMO_URL" --out conformance/reports 2>&1 | tee conformance.txt
+
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: live-check-reports
+          path: |
+            journey.md
+            conformance.txt
+            conformance/reports/
+          retention-days: 30
+
+      - name: Open, update or close the issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOURNEY: ${{ steps.journey.outcome }}
+          CONFORMANCE: ${{ steps.conformance.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          repo="$GITHUB_REPOSITORY"
+          title="Live demo check is failing"
+          existing="$(gh api "repos/$repo/issues?state=open&labels=live-check&per_page=1" --jq '.[0].number // empty')"
+          if [ "$JOURNEY" = "success" ] && [ "$CONFORMANCE" = "success" ]; then
+            if [ -n "$existing" ]; then
+              gh api "repos/$repo/issues/$existing/comments" -f body="Passing again: $RUN_URL" >/dev/null
+              gh api -X PATCH "repos/$repo/issues/$existing" -f state=closed >/dev/null
+            fi
+            exit 0
+          fi
+          {
+            echo "The live demo check found a problem at $DEMO_URL."
+            echo
+            echo "- Walk-through: **$JOURNEY**"
+            echo "- Conformance suite: **$CONFORMANCE**"
+            echo "- Run, with full reports to download: $RUN_URL"
+            echo
+            [ -f journey.md ] && cat journey.md
+            if [ -f conformance.txt ]; then
+              echo
+              echo "Conformance failures:"
+              echo
+              echo '```'
+              sed 's/\x1b\[[0-9;]*m//g' conformance.txt | grep -A1 -E '^ *FAIL' | head -60 || true
+              sed 's/\x1b\[[0-9;]*m//g' conformance.txt | tail -1
+              echo '```'
+            fi
+          } > body.md
+          if [ -n "$existing" ]; then
+            gh api "repos/$repo/issues/$existing/comments" -F body=@body.md >/dev/null
+          else
+            gh api "repos/$repo/labels" -f name=live-check -f color=d73a4a \
+              -f description="Opened by the live demo check" >/dev/null 2>&1 || true
+            gh api "repos/$repo/issues" -f title="$title" -F body=@body.md -f 'labels[]=live-check' >/dev/null
+          fi
+
+      - name: Fail the run if a check failed
+        if: steps.journey.outcome != 'success' || steps.conformance.outcome != 'success'
+        run: |
+          echo "::error::Walk-through: ${{ steps.journey.outcome }}; conformance suite: ${{ steps.conformance.outcome }}. See the live-check issue."
+          exit 1

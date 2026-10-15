@@ -221,6 +221,22 @@ From the `conformance` folder of your copy (setup in
 .venv/bin/python run.py --url https://utopia.osgovt.com
 ```
 
+## Automatic checks
+
+After every deploy, and once a night, GitHub runs the **Live demo check**
+(`.github/workflows/live-check.yml`) against the demo:
+
+- a walk-through of whole tasks in a real browser
+  (`conformance/demo_journey.py`): records search, a document's page image
+  and PDF, the open API, a test payment from bill lookup to receipt, and the
+  demo staff sign-in with its six-digit code;
+- the [conformance suite](../../conformance/README.md): accessibility, the
+  API, bulk files and the Data.gov catalogs.
+
+If anything fails, it opens a GitHub issue labeled `live-check` with what
+broke and a link to the full reports; the next passing run closes it. Start
+it by hand from **Actions** > **Live demo check** > **Run workflow**.
+
 ## Running it afterward
 
 - **Change something and redeploy:** push to `main` (GitHub deploys after CI

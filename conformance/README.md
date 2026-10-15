@@ -73,3 +73,16 @@ https://harvest.data.gov/validate/.
 | SKIP | Couldn't be checked here; the line says why |
 
 The exit code is 1 when anything failed, so it can run in a scheduled job or CI.
+
+## Walk-through of a demonstration site
+
+`demo_journey.py` follows whole tasks end to end on a site running in
+demonstration mode (`PORTAL_DEMO_MODE=1`): records search and download, the
+open API, a test payment through to the receipt, and the shared demo staff
+sign-in. It fails if any step breaks or leaves the site's own address. It
+makes one test payment and one sign-in, both erased when a demo resets.
+
+```
+.venv/bin/python demo_journey.py --url https://utopia.osgovt.com
+```
+
