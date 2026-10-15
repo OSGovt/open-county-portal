@@ -22,7 +22,7 @@ sudo apt-get install -y git python3-venv nodejs npm
 ```
 
 ```
-git clone --branch v1.0.0 https://github.com/OWNER/open-county-portal.git && cd open-county-portal/conformance
+git clone --branch v1.0.0 https://github.com/OSGovt/open-county-portal.git && cd open-county-portal/conformance
 ```
 
 ```

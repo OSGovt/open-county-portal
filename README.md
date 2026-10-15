@@ -57,7 +57,7 @@ All documentation: [docs/](docs/README.md).
 Install on a fresh Ubuntu 24.04 server:
 
 ```
-sudo apt-get install -y git && sudo git clone --branch v1.0.0 https://github.com/OWNER/open-county-portal.git /opt/county-portal && cd /opt/county-portal && sudo ./deploy/install.sh
+sudo apt-get install -y git && sudo git clone --branch v1.0.0 https://github.com/OSGovt/open-county-portal.git /opt/county-portal && cd /opt/county-portal && sudo ./deploy/install.sh
 ```
 
 Or try the fictional Utopia County with 200,000 generated records, on your

@@ -123,59 +123,86 @@ $2 a month on top of the $5 plan. The `basic` size (a quarter CPU, 1 GiB) costs
 a quarter as much; it should fit but I haven't tested it, so it isn't the
 default.
 
-You need: the Desktop with Docker Desktop and Ubuntu from Part 1 (only to
-build and send the demo to Cloudflare), and your Cloudflare login.
+There are two ways to send it to Cloudflare. **GitHub** builds and deploys it
+on GitHub's computers every time the code changes, so nothing runs on yours.
+**Your own computer** works too, but needs Docker installed.
 
-### 1. Register osgovt.com and add it to Cloudflare
+### 1. Add the domain to Cloudflare
 
-Register `osgovt.com` at GoDaddy and add it to your Cloudflare account the same
-way as your other domains (nameservers pointed at Cloudflare). Wait until
-Cloudflare shows the domain as **Active**. The demo will live at
-`utopia.osgovt.com`; the bare `osgovt.com` stays free for a project home page.
+Register the domain (for example `osgovt.com`) and add it to your Cloudflare
+account with its nameservers pointed at Cloudflare. Wait until Cloudflare shows
+it as **Active**. The demo lives at `utopia.osgovt.com`; the rest of the domain
+(the bare domain, email records) stays yours to use. **Keep the nameservers at
+Cloudflare:** if they point elsewhere, Cloudflare can't connect the demo's
+address. Email hosted somewhere else only needs its MX, SPF and DKIM records
+added in Cloudflare's DNS.
 
-### 2. Install Node.js 22 in Ubuntu
+### 2. Deploy with GitHub (recommended)
 
-Cloudflare's deploy tool needs Node.js 22 or newer; Ubuntu's own is older. In
-the Ubuntu window:
+**a. Create a Cloudflare API token.** Cloudflare dashboard > your profile icon
+(top right) > **Profile** > **API Tokens** > **Create Token** > **Edit
+Cloudflare Workers** > **Use template**. Under **Account Resources** pick your
+account; under **Zone Resources** pick **Specific zone** and your domain.
+Choose **Continue to summary** > **Create Token**, and copy the token. It's
+shown only once.
+
+**b. Find your account ID.** It's the long string of letters and numbers
+right after `dash.cloudflare.com/` in the address bar when you're signed in to
+the dashboard.
+
+**c. Store both in GitHub.** In your copy of the repository on GitHub:
+**Settings** > **Secrets and variables** > **Actions** > **New repository
+secret**, twice:
+
+| Name | Value |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | the token from step a |
+| `CLOUDFLARE_ACCOUNT_ID` | the account ID from step b |
+
+**d. Deploy.** **Actions** > **Deploy demo** > **Run workflow**. After that it
+runs on its own every time CI passes on `main`. The first run takes about 15
+minutes: it builds the portal and Utopia County's 200,000 records, uploads
+them, connects the address, and waits until the demo answers. A green check
+means it's live.
+
+The workflow only runs in the `OSGovt` organization's repository. To use it in
+your own, change `github.repository_owner == 'OSGovt'` in
+`.github/workflows/deploy-demo.yml`, and the address in
+`deploy/cloudflare/wrangler.jsonc`.
+
+### 3. Or deploy from your own computer
+
+You need Docker Desktop and Ubuntu from Part 1.
+
+Install Node.js 22 (Ubuntu's own is older):
 
 ```
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs && node --version
 ```
 
-The last line should print `v22` or higher.
-
-### 3. Install the deploy tool
+Install the deploy tool:
 
 ```
-cd ~/open-county-portal/deploy/cloudflare && npm install
+cd ~/open-county-portal/deploy/cloudflare && npm ci
 ```
 
-### 4. Sign in to Cloudflare
+Sign in to Cloudflare. A browser window asks you to allow access; choose
+**Allow**:
 
 ```
 cd ~/open-county-portal/deploy/cloudflare && npx wrangler login
 ```
 
-A browser window asks you to allow access; choose **Allow**. (If no browser
-opens, copy the address it prints into your browser.)
-
-### 5. Deploy
-
-Make sure Docker Desktop is running, then:
+With Docker Desktop running, deploy (5 to 10 minutes the first time):
 
 ```
 cd ~/open-county-portal/deploy/cloudflare && npx wrangler deploy
 ```
 
-It builds the demonstration (the portal, the database, and Utopia County's
-200,000 records; about 5 to 10 minutes the first time), uploads it to
-Cloudflare, and connects `utopia.osgovt.com`. It ends by printing the
-addresses it's live at.
-
-If it says `utopia.osgovt.com` can't be used, the domain isn't active in this
+If it says the address can't be used, the domain isn't active in this
 Cloudflare account yet (step 1).
 
-### 6. Open it
+### 4. Open it
 
 Go to `https://utopia.osgovt.com`. The first visit wakes the container: you may
 see "Utopia County is starting" for a minute, and the page retries on its own.
@@ -185,7 +212,7 @@ and the test payment (card `4242 4242 4242 4242`), the open data page and
 `https://utopia.osgovt.com/api/v1/instruments?name=garcia`, and the staff
 console at `https://utopia.osgovt.com/staff`.
 
-### 7. Check it
+### 5. Check it
 
 From the `conformance` folder of your copy (setup in
 [Accessibility testing](accessibility-testing.md#part-1-automated-check)):
@@ -196,8 +223,9 @@ From the `conformance` folder of your copy (setup in
 
 ## Running it afterward
 
-- **Change something and redeploy:** run step 5 again. Visitors see the new
-  version from their next visit.
+- **Change something and redeploy:** push to `main` (GitHub deploys after CI
+  passes), or run the deploy command again. Visitors see the new version from
+  their next visit.
 - **Watch it:** Cloudflare dashboard > **Workers & Pages** > `utopia-county`
   shows requests and logs; **Containers** shows when it's awake.
 - **Take it down:** `npx wrangler delete` in `deploy/cloudflare` removes the

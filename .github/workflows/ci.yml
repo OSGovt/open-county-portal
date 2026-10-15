@@ -58,7 +58,7 @@ jobs:
           sudo chown 1000:1000 /var/lib/county-portal/data
           printf 'PORTAL_HOST=localhost\nPORTAL_TLS_MODE=internal\nPORTAL_SECRET_KEY=ci\nPOSTGRES_PASSWORD=ci\nPORTAL_SITE_URL=https://localhost\nPORTAL_IMAGE_TAG=ci\n' > .env
           docker compose up -d
-          for i in $(seq 1 40); do
+          for _ in $(seq 1 40); do
             docker compose exec -T app python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')" && break
             sleep 3
           done

@@ -30,7 +30,7 @@ public spaces where someone represents the project.
 ## Reporting
 
 Report to the maintainers privately through GitHub's private reporting on
-this repository, or by email to an address listed in `MAINTAINERS.md`.
+this repository, or by email to conduct@osgovt.com (see `MAINTAINERS.md`).
 Reports are kept confidential. Maintainers will review promptly and may warn,
 temporarily ban, or permanently ban anyone who breaks this code. A maintainer
 involved in a report steps aside from deciding it.

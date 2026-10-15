@@ -47,7 +47,7 @@ Use the newest release number from the project's Releases page in place of
 `v1.0.0`:
 
 ```
-sudo git clone --branch v1.0.0 https://github.com/OWNER/open-county-portal.git /opt/county-portal
+sudo git clone --branch v1.0.0 https://github.com/OSGovt/open-county-portal.git /opt/county-portal
 ```
 
 Installing with git lets `countyctl update` fetch new releases.

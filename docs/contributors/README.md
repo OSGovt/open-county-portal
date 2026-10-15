@@ -38,7 +38,7 @@ sudo apt-get install -y python3.12-venv postgresql tesseract-ocr poppler-utils
 2. Get the code and a virtual environment:
 
 ```
-git clone https://github.com/OWNER/open-county-portal.git && cd open-county-portal && python3 -m venv .venv
+git clone https://github.com/OSGovt/open-county-portal.git && cd open-county-portal && python3 -m venv .venv
 ```
 
 ```

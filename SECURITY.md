@@ -6,7 +6,8 @@ can include ID photos. We take reports seriously.
 ## Reporting a vulnerability
 
 Please report privately, not in a public issue: use GitHub's "Report a
-vulnerability" (private security advisory) on this repository.
+vulnerability" (private security advisory) on this repository, or email
+security@osgovt.com.
 
 Include what you found, how to reproduce it, and what an attacker could do.
 We'll acknowledge within 3 business days, keep you informed, and credit you

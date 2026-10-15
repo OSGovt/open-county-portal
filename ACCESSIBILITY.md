@@ -49,4 +49,4 @@ and follows WCAG 2.2 AA practices where practical.
 - **In the software itself:** open an issue labeled `accessibility`
   describing the page, what you were doing, your browser and assistive
   technology, and what happened. Accessibility bugs are treated as release
-  blockers.
+  blockers. If you'd rather not use GitHub, email accessibility@osgovt.com.
