@@ -37,7 +37,13 @@ export class UtopiaPortal extends DurableObject {
     forwarded.headers.set("x-forwarded-host", incoming.host);
     const ip = request.headers.get("cf-connecting-ip");
     if (ip) forwarded.headers.set("x-forwarded-for", ip);
-    return this.ctx.container.getTcpPort(PORT).fetch(forwarded);
+    const response = await this.ctx.container.getTcpPort(PORT).fetch(forwarded);
+    // Which Worker version is answering, and which version started the
+    // container: lets the live check confirm a deploy actually took effect.
+    const tagged = new Response(response.body, response);
+    tagged.headers.set("x-demo-worker-version", this.env.CF_VERSION_METADATA?.id || "unknown");
+    tagged.headers.set("x-demo-container-version", (await this.ctx.storage.get("version")) || "unknown");
+    return tagged;
   }
 
   async startAndWaitForPort() {

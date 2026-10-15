@@ -66,7 +66,14 @@ def wake(res: Result, base: str, wait_s: int) -> bool:
             try:
                 r = client.get(f"{base}/healthz")
                 if r.status_code == 200:
-                    res.add("wake", True, f"answered in {time.time() - start:.0f} s")
+                    detail = f"answered in {time.time() - start:.0f} s"
+                    worker = r.headers.get("x-demo-worker-version")
+                    if worker:  # the Cloudflare demo says which versions are serving
+                        box = r.headers.get("x-demo-container-version", "unknown")
+                        detail += f"; worker {worker[:8]}, container started by {box[:8]}"
+                        if box != worker:
+                            detail += " (container still on an older version)"
+                    res.add("wake", True, detail)
                     return True
                 last = f"HTTP {r.status_code}"
             except httpx.HTTPError as exc:
