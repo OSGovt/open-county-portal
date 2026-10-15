@@ -1,0 +1,25 @@
+name: Feature request
+description: Something the portal should do but doesn't.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What do you need to do?
+      description: Describe the task and who does it (residents, clerks, cashiers, IT), not the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: now
+    attributes:
+      label: How do you do it today?
+  - type: input
+    id: who
+    attributes:
+      label: Your kind of government
+      description: For example "county, about 50,000 residents" or "water district". Optional.
+  - type: textarea
+    id: law
+    attributes:
+      label: Is it required by law?
+      description: If so, cite the statute or rule. It helps prioritize, and goes in a state pack if it's state-specific.

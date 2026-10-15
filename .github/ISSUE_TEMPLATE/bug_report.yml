@@ -1,0 +1,52 @@
+name: Bug report
+description: Something doesn't work as the documentation says it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Remove residents' personal information, passwords and `.env` contents before posting.
+        Security problems go to the private security report instead (see SECURITY.md).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See ...
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - The demo (utopia.osgovt.com)
+        - Our own installation
+        - Installing or updating
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Shown by `sudo countyctl status`, or in the site footer's Source code page.
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `sudo countyctl doctor`
+      description: For your own installation. Paste it as is.
+      render: text
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and assistive technology
+      description: For display problems, for example "Firefox 140 on Windows with NVDA".

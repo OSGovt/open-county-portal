@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question
+    url: https://github.com/OSGovt/open-county-portal/discussions
+    about: How do I...? Is it possible to...? Questions go to Discussions.
+  - name: Report a security problem
+    url: https://github.com/OSGovt/open-county-portal/security/advisories/new
+    about: Report privately. Never post security problems in a public issue.
+  - name: Try the demo
+    url: https://utopia.osgovt.com
+    about: A fictional county with every feature turned on.

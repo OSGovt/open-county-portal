@@ -1,0 +1,27 @@
+name: Accessibility barrier
+description: Something in the software that someone with a disability can't use.
+labels: [accessibility]
+body:
+  - type: markdown
+    attributes:
+      value: Accessibility bugs are release blockers. If you'd rather not use GitHub, email accessibility@osgovt.com.
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: The address, or which page of the demo.
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What you were doing, and what happened
+    validations:
+      required: true
+  - type: input
+    id: tech
+    attributes:
+      label: Browser and assistive technology
+      placeholder: Safari on iPhone with VoiceOver
+    validations:
+      required: true
