@@ -91,8 +91,10 @@ async def mfa_submit(request: Request):
             return RedirectResponse("/staff/login", status_code=303)
         if not auth.verify_totp(user["totp_secret"], str(form.get("code", ""))):
             audit(conn, user["email"], "mfa.failed", "user", user["email"], ip=client_ip(request))
+            code = auth.demo_code(conn) if auth.is_demo_account(user["email"]) else None
             return render(request, "staff/mfa.html", conn, status_code=400, page_title="Enter your code",
-                          error="That code didn't match. Codes change every 30 seconds; enter the one showing now.")
+                          error="That code didn't match. Codes change every 30 seconds; enter the one showing now.",
+                          demo_code=code)
         return _finish_login(request, conn, user)
 
 

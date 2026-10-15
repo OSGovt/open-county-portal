@@ -27,10 +27,12 @@ export class UtopiaPortal extends DurableObject {
     });
     await this.starting;
 
+    // Keep the visitor's host name in the URL: it becomes the Host header the
+    // portal sees, so redirects it builds (such as /staff -> /staff/) point at
+    // utopia.osgovt.com. The container is reached through the port either way.
     const incoming = new URL(request.url);
-    const url = new URL(incoming.pathname + incoming.search, "http://container");
+    const url = new URL(incoming.pathname + incoming.search, `http://${incoming.host}`);
     const forwarded = new Request(url, request);
-    forwarded.headers.delete("host");
     forwarded.headers.set("x-forwarded-proto", "https");
     forwarded.headers.set("x-forwarded-host", incoming.host);
     const ip = request.headers.get("cf-connecting-ip");

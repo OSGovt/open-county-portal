@@ -290,6 +290,9 @@ def test_demo_mode_shared_staff_account(client, monkeypatch):
                                           "password": auth.DEMO_STAFF_PASSWORD}, follow_redirects=True)
     code = _re.search(r"the current code is <strong>(\d{6})</strong>", r.text).group(1)
     token = csrf(client, "/staff/mfa")
+    wrong = "000000" if code != "000000" else "111111"
+    r = client.post("/staff/mfa", data={"_csrf": token, "code": wrong})
+    assert r.status_code == 400 and "the current code is <strong>" in r.text  # still shown after a miss
     r = client.post("/staff/mfa", data={"_csrf": token, "code": code}, follow_redirects=True)
     assert r.status_code == 200 and "/staff/login" not in str(r.url)
     assert client.get("/staff/counter").status_code == 200
