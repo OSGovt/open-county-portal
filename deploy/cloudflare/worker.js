@@ -93,6 +93,12 @@ const WAKING = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 
 export default {
   async fetch(request, env) {
+    // Plain http:// goes to https:// before anything wakes the container.
+    const url = new URL(request.url);
+    if (url.protocol === "http:") {
+      url.protocol = "https:";
+      return Response.redirect(url.toString(), 301);
+    }
     try {
       return await env.PORTAL.getByName("utopia").fetch(request);
     } catch (error) {
