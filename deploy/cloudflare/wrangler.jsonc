@@ -25,6 +25,8 @@
       }
     }
   ],
+  // Lets the Worker restart the container on the new image after a deploy.
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
   "durable_objects": {
     "bindings": [{ "class_name": "UtopiaPortal", "name": "PORTAL" }]
   },

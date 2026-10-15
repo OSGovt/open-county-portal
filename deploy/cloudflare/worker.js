@@ -42,6 +42,14 @@ export class UtopiaPortal extends DurableObject {
 
   async startAndWaitForPort() {
     const container = this.ctx.container;
+    // A deploy restarts this Durable Object but leaves a running container on
+    // the old image. Restart it when the Worker version has changed, so every
+    // deploy serves the new version (and a freshly reset demo).
+    const version = this.env.CF_VERSION_METADATA?.id;
+    if (container.running && version && (await this.ctx.storage.get("version")) !== version) {
+      console.log("New version deployed; restarting the container");
+      await container.destroy("new version deployed");
+    }
     if (!container.running) {
       container.start({
         image: container.images.base,
@@ -51,6 +59,7 @@ export class UtopiaPortal extends DurableObject {
           PORTAL_SITE_URL: this.env.SITE_URL || "https://utopia.osgovt.com",
         },
       });
+      if (version) await this.ctx.storage.put("version", version);
     }
     this.observeExit();
     await container.setInactivityTimeout(IDLE_MINUTES * 60 * 1000);
