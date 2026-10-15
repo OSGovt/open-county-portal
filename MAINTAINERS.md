@@ -1,8 +1,7 @@
 # Maintainers
 
-| Name | Responsibilities |
-|---|---|
-| Royce Hart | Project lead: reviews, releases, security response |
+The project is maintained by the OSGovt maintainers, who handle reviews,
+releases and security response. Reach them at the addresses below.
 
 ## Contact
 
