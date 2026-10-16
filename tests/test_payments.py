@@ -146,3 +146,17 @@ def test_voiding_online_order_refunds_through_processor(client):
         assert conn.execute(select(orders.c.status).where(orders.c.number == number)).scalar_one() == "void"
         assert conn.execute(select(audit_log.c.id).where(audit_log.c.action == "order.refund",
                                                          audit_log.c.object_id == number)).first()
+
+
+def test_payment_pages_keep_the_labels_the_live_check_clicks(client):
+    """The live demo walk-through (conformance/demo_journey.py, step 'payment')
+    finds its way by accessible name. Renaming one of these controls breaks the
+    nightly check after a deploy, so pin them here where CI runs before it."""
+    _set_policy(processor="test", methods=["card"])
+    assert ">Add to cart<" in client.get("/pay/property_tax?q=R000123").text
+    _add_tax(client)
+    assert ">Continue to checkout<" in client.get("/cart").text
+    checkout = client.get("/checkout").text
+    assert ">Email for your receipt<" in checkout
+    assert "Credit or debit card" in checkout
+    assert ">Continue to secure payment<" in checkout
