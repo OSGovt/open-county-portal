@@ -3,6 +3,10 @@
 The project is maintained by the OSGovt maintainers, who handle reviews,
 releases and security response. Reach them at the addresses below.
 
+Day-to-day maintenance (checks, repairs, documentation rehearsals,
+findability) runs on an automated pipeline with a human owner; what runs,
+when, and what each part may change is in [AUTOMATION.md](AUTOMATION.md).
+
 ## Contact
 
 | For | Email |

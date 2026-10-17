@@ -38,6 +38,7 @@ Reference: [countyctl](admin/countyctl.md) · [Updates](admin/updates.md) ·
 
 - [Conformance suite](../conformance/README.md): check any running portal
 - [Changelog](../CHANGELOG.md)
+- [How this project is maintained](../AUTOMATION.md): the automated pipeline and who owns what
 - [Field notes](field-notes/README.md): rehearsals and notable fixes, from the maintenance pipeline
 - [Traffic log](traffic/README.md): nightly snapshot of repository views and stars
 
