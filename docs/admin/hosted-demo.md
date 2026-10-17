@@ -59,7 +59,7 @@ On Windows, open **Ubuntu** from the Start menu; on Linux or Mac, open a
 terminal. Then:
 
 ```
-sudo apt-get update && sudo apt-get install -y git && git clone https://github.com/OSGovt/open-county-portal.git ~/open-county-portal && cd ~/open-county-portal && ls
+sudo apt-get update && sudo apt-get install -y git && git clone --branch v1.0.0 https://github.com/OSGovt/open-county-portal.git ~/open-county-portal && cd ~/open-county-portal && ls
 ```
 
 (On a Mac, `git` is already there; skip the `apt-get` part.)
