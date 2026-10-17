@@ -28,7 +28,7 @@ import httpx
 
 TODAY = date.today().isoformat()
 OUT = Path("reach")
-UA = "OpenCountyPortal-ReachCheck/1.0 (+https://github.com/OSGovt/open-county-portal)"
+UA = "ReachCheck/1.0"   # completed with the repository address in main()
 
 # Crawlers whose access decides whether people find the site through search or an assistant.
 AGENTS = ["Googlebot", "Bingbot", "DuckDuckBot", "ClaudeBot", "Claude-User", "Claude-SearchBot",
@@ -173,6 +173,8 @@ def bing(sites: list[dict]) -> str:
 def main(repo: str, sites_file: str, only: str | None = None) -> int:
     """only="github" runs just the GitHub section (for a session whose token has push access)
     and leaves latest.md alone; otherwise everything runs and latest.md is rewritten."""
+    global UA
+    UA = f"ReachCheck/1.0 (+https://github.com/{repo})"
     if only == "github":
         print(github_traffic(repo)); return 0
     sites = json.loads(Path(sites_file).read_text())["sites"]
