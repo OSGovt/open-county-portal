@@ -32,7 +32,7 @@ names the page that should rank; "status" is updated from `reach/` data.
 
 | # | Question, as typed | Answered by |
 |---|---|---|
-| 1 | free open source county records portal | osgovt.com home; `README.md`; `docs/officials/README.md` |
+| 1 | free open source county records portal | OSGovt.com home; `README.md`; `docs/officials/README.md` |
 | 2 | county website online payments records search open source | `README.md`; demo home |
 | 3 | WCAG 2.1 AA accessible county website software | `ACCESSIBILITY.md`; `docs/officials/README.md` |
 | 4 | ADA Title II website deadline county what do we need | `docs/officials/README.md` ("Why now") |
@@ -61,7 +61,7 @@ For people searching:
 For agents consulting registries (verified to exist 2026-10-17; weights unknown):
 - A `SKILL.md` in this repository that an agent can load to install and
   operate the portal, and a listing on skills.sh (`npx skills add`).
-- `/.well-known/agent-skills/index.json` on osgovt.com, per Cloudflare's
+- `/.well-known/agent-skills/index.json` on OSGovt.com, per Cloudflare's
   agent-skills discovery RFC, pointing at that skill.
 - The MCP Registry and the ARD (Agentic Resource Discovery) registry for the
   public API, once an MCP server exists over the OpenAPI document. These are
@@ -83,7 +83,7 @@ harvested queries are the words our titles and READMEs should use.
 |---|---|---|
 | `github.com/OSGovt/open-county-portal` | the project | GitHub traffic API (nightly `docs/traffic/traffic.csv`; weekly referrers and paths in `reach/github.csv`) |
 | `utopia.osgovt.com` | the live demo | Search Console and Bing Webmaster once verified; robots/agent access probe weekly |
-| `osgovt.com` | project site (repository `OSGovt/osgovt.com`: home, For officials, For IT, Open data, `/llms.txt`) | Search Console Domain property `sc-domain:osgovt.com` (covers the demo too), Bing Webmaster, robots/agent access probe weekly. Live since 2026-10-17; before that the domain carried mail only. |
+| `osgovt.com` | project site (repository `OSGovt/OSGovt.com`: home, For officials, For IT, Open data, `/llms.txt`) | Search Console Domain property `sc-domain:osgovt.com` (covers the demo too), Bing Webmaster, robots/agent access probe weekly. Live since 2026-10-17; before that the domain carried mail only. |
 | `oscivic.com` | family home page | links here; measured in its own repository |
 
 ## Rules for the maintenance pass

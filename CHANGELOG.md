@@ -26,7 +26,7 @@ First release.
 - Conformance suite for accessibility, the API contract, bulk files and the Data.gov catalogs.
 - A Source code page on every installation (AGPL section 13).
 - Demonstration county generator (`countyctl app demo --scale`), a fictional state pack, subfolder hosting (`PORTAL_BASE_PATH`), and managed-hosting support (Render blueprint, first-start bootstrap, in-app nightly jobs), and a self-resetting public demonstration on Cloudflare Containers with a shared demo staff account (PORTAL_DEMO_MODE), deployed by GitHub Actions after CI passes, and checked after every deploy and nightly by a browser walk-through and the conformance suite.
-- Project contacts at osgovt.com (MAINTAINERS.md) for security, accessibility and conduct reports.
+- Project contacts at OSGovt.com (MAINTAINERS.md) for security, accessibility and conduct reports.
 - Documentation for administrators, officials, staff, implementers, data users, state pack authors and contributors, also built into the staff console.
 - Installer writes the bulk open-data files at install time, so the catalog's download links work from the first minute.
 - Install check: an unattended clean-machine install, `countyctl doctor` and the conformance suite run on GitHub on every version tag and weekly; a source archive is attached to every release automatically.
