@@ -9,6 +9,13 @@ phone, with or without JavaScript. Every piece of public data is free to use
 through the API, daily bulk files, and a DCAT-US catalog that Data.gov
 harvests. No license fees, no lock-in, no vendor holding your data.
 
+## A few terms
+
+- **`countyctl`**: the administrator's command on the server (status, backup, restore, update).
+- **State pack**: a bundle that sets up one state's offices, fees, required postings and records rules.
+- **DCAT-US**: the catalog format Data.gov reads, so your open data is listed there automatically.
+- **Change feed**: an API endpoint that lists what changed since a given time, for anyone keeping a copy of the data.
+
 ## What it does
 
 **For residents**
@@ -41,6 +48,23 @@ harvests. No license fees, no lock-in, no vendor holding your data.
 - A conformance suite that checks any running portal for accessibility, API
   contract and catalog problems
 
+## Run it locally in three commands
+
+You need Docker (Docker Engine on Linux, Docker Desktop on Mac or Windows with
+WSL) and access to hub.docker.com. Then:
+
+```
+git clone https://github.com/OSGovt/open-county-portal.git
+cd open-county-portal
+./deploy/local/start.sh
+```
+
+The first run builds the portal (5 to 10 minutes) and generates the fictional
+Utopia County. Open http://localhost:8080, search records for `smith`, and
+sign in to the staff console with the email and temporary password the script
+prints. Details, Windows steps and how to erase it:
+[Demonstration site](docs/admin/hosted-demo.md).
+
 ## Get started
 
 | You are | Read |
@@ -54,14 +78,17 @@ harvests. No license fees, no lock-in, no vendor holding your data.
 
 All documentation: [docs/](docs/README.md).
 
-Install on a fresh Ubuntu 24.04 server:
+Install on a fresh Ubuntu 24.04 server (this clones the current `main`; once a
+numbered release exists, pin it with `--branch vX.Y.Z` and see
+[Updates](docs/admin/updates.md)):
 
 ```
-sudo apt-get install -y git && sudo git clone --branch v1.0.0 https://github.com/OSGovt/open-county-portal.git /opt/county-portal && cd /opt/county-portal && sudo ./deploy/install.sh
+sudo apt-get install -y git && sudo git clone https://github.com/OSGovt/open-county-portal.git /opt/county-portal && cd /opt/county-portal && sudo ./deploy/install.sh
 ```
 
-Or try the fictional Utopia County with 200,000 generated records, on your
-own computer or on Cloudflare: [Demonstration site](docs/admin/hosted-demo.md).
+Or try the fictional Utopia County with 200,000 generated records on your own
+computer, or publish that demonstration (demo only, not a real installation)
+on Cloudflare: [Demonstration site](docs/admin/hosted-demo.md).
 
 ## How it's built
 

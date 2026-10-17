@@ -12,7 +12,17 @@ presents real law, and every page image says SAMPLE.
 
 ## Part 1: On your own computer
 
-You need Docker. On Windows that means WSL (Ubuntu) and Docker Desktop.
+You need Docker and access to hub.docker.com (the first start pulls the
+`postgres:16-alpine` image; on a network that blocks Docker Hub, start on a
+different network or ask your IT group for a registry mirror).
+
+- **Linux**: install Docker Engine (`sudo apt-get install -y docker.io` on
+  Ubuntu, then `sudo usermod -aG docker $USER` and sign in again), then skip to
+  step 4.
+- **Mac**: install Docker Desktop from docker.com, open it once, then skip to
+  step 4.
+- **Windows**: you need WSL (Ubuntu) and Docker Desktop; steps 1 to 3 set
+  those up.
 
 ### 1. Check what's installed
 
@@ -43,15 +53,16 @@ Download and install Docker Desktop for Windows from docker.com. Open it, go
 to **Settings > Resources > WSL integration**, turn on **Ubuntu-24.04**, and
 choose **Apply & restart**.
 
-### 4. Get the portal into Ubuntu
+### 4. Get the portal
 
-Open **Ubuntu** from the Start menu. Windows drives appear under `/mnt`:
-`D:\Downloads` is `/mnt/d/Downloads`. If the zip is somewhere else, change
-that part of the path.
+On Windows, open **Ubuntu** from the Start menu; on Linux or Mac, open a
+terminal. Then:
 
 ```
-sudo apt-get update && sudo apt-get install -y unzip && unzip -q /mnt/d/Downloads/open-county-portal-1.0.0.zip -d ~ && cd ~/open-county-portal && ls
+sudo apt-get update && sudo apt-get install -y git && git clone https://github.com/OSGovt/open-county-portal.git ~/open-county-portal && cd ~/open-county-portal && ls
 ```
+
+(On a Mac, `git` is already there; skip the `apt-get` part.)
 
 You should see `README.md`, `deploy`, `docs` and other folders.
 

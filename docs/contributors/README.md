@@ -26,13 +26,13 @@ proposals and reviews work; this page is the technical part.
 
 ## Set up a development copy
 
-You need Python 3.12, PostgreSQL 16 and Node.js 22 (only for the conformance
+You need Python 3.12 or newer, PostgreSQL 16 and Node.js 22 (only for the conformance
 suite). On Ubuntu 24.04:
 
 1. Install the tools:
 
 ```
-sudo apt-get install -y python3.12-venv postgresql tesseract-ocr poppler-utils
+sudo apt-get update && sudo apt-get install -y python3-venv postgresql tesseract-ocr poppler-utils
 ```
 
 2. Get the code and a virtual environment:
@@ -45,10 +45,15 @@ git clone https://github.com/OSGovt/open-county-portal.git && cd open-county-por
 .venv/bin/pip install -r requirements.txt -r requirements-dev.txt -r conformance/requirements.txt
 ```
 
-3. Make a database you're allowed to wipe:
+3. Make sure PostgreSQL is running, then make a database you're allowed to wipe
+   (if `$USER` is empty, as in some containers, use `whoami` instead):
 
 ```
-sudo -u postgres createuser -s "$USER" && createdb portal_dev && createdb portal_test
+sudo service postgresql start
+```
+
+```
+sudo -u postgres createuser -s "$(whoami)" && createdb portal_dev && createdb portal_test
 ```
 
 4. Run the portal with sample data:
@@ -67,6 +72,12 @@ export PORTAL_ENV=development PORTAL_DATABASE_URL="postgresql+psycopg:///portal_
 
 Open http://localhost:8000. The staff console is at /staff; the setup
 command printed the temporary password.
+
+The development sample data is small and every record says SAMPLE. Things to
+try: records search for `resident` or `homeowner` (the 200,000-record Utopia
+County demo in [hosted-demo.md](../admin/hosted-demo.md) is where `smith` and
+`garcia` live), the API at `/api/v1/instruments?name=resident`, and a property
+tax lookup for account `R000123` or `R000456`.
 
 ## Tests
 

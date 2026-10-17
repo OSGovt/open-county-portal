@@ -8,7 +8,7 @@ effort; there's no phone support or guaranteed response time.
 | Try it | The demo at https://utopia.osgovt.com (all data is fictional) |
 | Install or run it | The [administrator guide](docs/admin/README.md), and [troubleshooting](docs/admin/troubleshooting.md) |
 | Decide whether to adopt it | The [guide for officials](docs/officials/README.md) |
-| Ask a question | [GitHub Discussions](https://github.com/OSGovt/open-county-portal/discussions) |
+| Ask a question | [GitHub Discussions](https://github.com/OSGovt/open-county-portal/discussions), or if that page isn't available yet, [open an issue](https://github.com/OSGovt/open-county-portal/issues/new/choose) and pick "Question" |
 | Report a bug or request a feature | [GitHub Issues](https://github.com/OSGovt/open-county-portal/issues/new/choose) |
 | Report a security problem | Privately, as described in [SECURITY.md](SECURITY.md). Never in a public issue. |
 | Report an accessibility barrier | An issue labeled `accessibility`, or accessibility@osgovt.com |

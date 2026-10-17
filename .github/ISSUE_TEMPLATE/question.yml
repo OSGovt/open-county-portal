@@ -1,0 +1,16 @@
+name: Question
+description: How do I...? Is it possible to...? (Use Discussions instead once it's enabled.)
+labels: [question]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: What are you trying to do, and what have you tried? Remove residents' personal information, passwords and .env contents before posting.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Output of `sudo countyctl status`, or the git commit you're running.

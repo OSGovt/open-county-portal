@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 command -v docker >/dev/null || { echo "Docker isn't installed or isn't running. See docs/admin/hosted-demo.md, part 1."; exit 1; }
-docker info >/dev/null 2>&1 || { echo "Docker is installed but not running. Start Docker Desktop and try again."; exit 1; }
+docker info >/dev/null 2>&1 || { echo "Docker is installed but not running. On Linux: sudo systemctl start docker (and make sure your user is in the docker group). On Mac or Windows: start Docker Desktop. Then try again."; exit 1; }
 
 if [ ! -f .env ]; then
   umask 077
