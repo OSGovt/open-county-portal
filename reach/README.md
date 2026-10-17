@@ -12,6 +12,10 @@ root. Rows are appended; a re-run on the same day replaces that day's rows.
 | `agents.csv` | For each site and crawler, whether `robots.txt` lets it read the home page; status of `robots.txt`, `sitemap.xml`, `llms.txt` | the sites themselves |
 | `search-console.csv` | Clicks, impressions, CTR, position per query and page, trailing 28 days | Google Search Console API (needs the `GSC_SERVICE_ACCOUNT_JSON` repository secret) |
 | `bing.csv` | Clicks, impressions, average position per query, Bing's weekly buckets | Bing Webmaster Tools API (needs the `BING_WEBMASTER_API_KEY` repository secret) |
+| `cold.csv` | Per persona and run: searches made, whether our properties appeared in results or in the answer, which domains were recommended | `tools/cold_probe.py`, weekly (`cold-probe.yml`, needs `ANTHROPIC_API_KEY`) |
+| `harvest.csv` | Every search query the probed model emitted, per persona | `tools/cold_probe.py` |
+| `cold/` | The full answer each persona would have read, per run | `tools/cold_probe.py` |
+| `personas.json` | The questions asked, in the askers' words | maintained by hand; never steered toward us |
 | `log.md` | What the weekly maintenance pass changed, with the measurement before it | the maintenance pass |
 | `submissions/` | Drafts for third-party listings, awaiting a human yes | the maintenance pass |
 

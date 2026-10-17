@@ -50,12 +50,32 @@ Third-party listings are drafted into `reach/submissions/` and opened as a
 GitHub issue for a human yes before anything is sent. The maintenance pass
 never posts to another site on its own.
 
+For people searching:
 - Awesome lists: civic tech, govtech, open data, self-hosted software.
 - Code for America brigade project directories; Civic Tech Field Guide.
 - Data.gov / DCAT-US implementer lists; state open-data program pages.
 - Docker Hub or GitHub Container Registry image page with a full description.
 - Texas: TAC (Texas Association of Counties) and county clerks' association
   resource pages, only when there is a real, measured claim to make.
+
+For agents consulting registries (verified to exist 2026-10-17; weights unknown):
+- A `SKILL.md` in this repository that an agent can load to install and
+  operate the portal, and a listing on skills.sh (`npx skills add`).
+- `/.well-known/agent-skills/index.json` on osgovt.com, per Cloudflare's
+  agent-skills discovery RFC, pointing at that skill.
+- The MCP Registry and the ARD (Agentic Resource Discovery) registry for the
+  public API, once an MCP server exists over the OpenAPI document. These are
+  two separate registries with two submission paths.
+
+## Cold discovery probe
+
+`tools/cold_probe.py` (weekly, `.github/workflows/cold-probe.yml`) asks a
+Claude model with web search the questions in `reach/personas.json`, in the
+askers' own words and with no URL, and records in `reach/cold.csv` whether
+any of our properties appeared, in `reach/harvest.csv` every query the
+model ran, and in `reach/cold/` the answer a person would have read. This
+is the adoption metric: the Sunday maintenance pass reads it first, and the
+harvested queries are the words our titles and READMEs should use.
 
 ## Properties and what measures them
 

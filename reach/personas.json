@@ -1,0 +1,10 @@
+{
+  "_comment": "Who asks an AI assistant for this kind of software, in their own words. tools/cold_probe.py asks each question with web search and records whether any of our properties turns up. Change the prompts only to make them more like what a real person would type, never to steer toward us.",
+  "personas": [
+    { "id": "county-clerk", "prompt": "I'm the county clerk in a Texas county of about 40,000 people. Our records search website is from a vendor, costs us every year, and people on phones can't use it. We've been told our website has to meet accessibility rules. Is there any free or open-source software that does county records search and online copies? Which would you recommend and how would we get it?" },
+    { "id": "county-it", "prompt": "I run IT for a mid-sized county (one-person shop). Leadership wants online payments for property tax and court costs, a records search, and the website brought up to WCAG 2.1 AA. Are there open-source options I could self-host instead of a vendor contract? Compare what exists and tell me what you'd install." },
+    { "id": "special-district", "prompt": "I'm the administrator of a small water district with no IT staff. We need a simple public website with our meetings, notices, and a way for people to pay bills online, and it has to be accessible under the ADA rules for government websites. What free or low-cost software exists for this, and what would you pick?" },
+    { "id": "implementer", "prompt": "I'm an IT consultant who works with small local governments. I'm looking for open-source software I could deploy for counties: records search, online payments, meetings, open data API. What projects exist, how mature are they, and which would you build a practice around?" },
+    { "id": "open-data-dev", "prompt": "I'm a developer who wants county property records and meeting data as an API or bulk download, ideally in a standard format Data.gov understands (DCAT-US). Which county portal software publishes that, and is any of it open source?" }
+  ]
+}

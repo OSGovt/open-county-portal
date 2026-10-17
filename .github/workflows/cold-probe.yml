@@ -1,0 +1,53 @@
+# Weekly cold discovery probe: an AI assistant with no URL is asked, in several
+# personas' own words, for this kind of software. Did it find us? Which queries
+# did it run? Which did it recommend instead? Results go to reach/cold.csv,
+# reach/harvest.csv and reach/cold/*.md for the weekly maintenance pass to read.
+# Billed to the Console API key in ANTHROPIC_API_KEY, not a plan.
+name: Cold discovery probe
+
+on:
+  schedule:
+    - cron: "57 6 * * 0"   # Sundays 06:57 UTC = 1:57 AM Central, after the reach check, before the weekly pass
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Model to ask
+        default: claude-sonnet-5-5
+
+concurrency:
+  group: cold-probe
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    if: github.repository_owner == 'OSGovt'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install the probe's package
+        run: pip install anthropic==1.15.0
+
+      - name: Ask each persona's question
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python tools/cold_probe.py reach/personas.json --model "${{ inputs.model || 'claude-sonnet-5-5' }}"
+
+      - name: Commit the results
+        run: |
+          git config user.name "OSGovt"
+          git config user.email "hello@osgovt.com"
+          git add reach/
+          if git diff --cached --quiet; then
+            echo "Nothing changed."; exit 0
+          fi
+          git commit -m "Reach: cold discovery probe $(date -u +%Y-%m-%d) [skip ci]"
+          git push
