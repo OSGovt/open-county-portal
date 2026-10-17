@@ -32,11 +32,11 @@ names the page that should rank; "status" is updated from `reach/` data.
 
 | # | Question, as typed | Answered by |
 |---|---|---|
-| 1 | free open source county records portal | `README.md`; `docs/officials/README.md` |
+| 1 | free open source county records portal | osgovt.com home; `README.md`; `docs/officials/README.md` |
 | 2 | county website online payments records search open source | `README.md`; demo home |
 | 3 | WCAG 2.1 AA accessible county website software | `ACCESSIBILITY.md`; `docs/officials/README.md` |
 | 4 | ADA Title II website deadline county what do we need | `docs/officials/README.md` ("Why now") |
-| 5 | replace county records vendor no license fee | `docs/officials/README.md`; no dedicated cost page yet |
+| 5 | replace county records vendor no license fee | `docs/officials/README.md`; osgovt.com/for-officials/ (cost table) |
 | 6 | county open data portal DCAT-US Data.gov free | `docs/data/README.md`; `docs/admin/data-gov.md`; demo `/data` |
 | 7 | counter point of sale software county clerk open source | `README.md`; `docs/staff/README.md` |
 | 8 | install county portal one command Docker | `README.md` "Run it locally"; `docs/admin/install.md` |
@@ -63,7 +63,7 @@ never posts to another site on its own.
 |---|---|---|
 | `github.com/OSGovt/open-county-portal` | the project | GitHub traffic API (nightly `docs/traffic/traffic.csv`; weekly referrers and paths in `reach/github.csv`) |
 | `utopia.osgovt.com` | the live demo | Search Console and Bing Webmaster once verified; robots/agent access probe weekly |
-| `osgovt.com` | project domain | nothing yet. As of 2026-10-17 `osgovt.com` has no A record and `www.osgovt.com` does not exist (dns.google); the domain carries mail only. Until a site exists there, search traffic for the project's own name has nowhere to land but GitHub. |
+| `osgovt.com` | project site (repository `OSGovt/osgovt.com`: home, For officials, For IT, Open data, `/llms.txt`) | Search Console Domain property `sc-domain:osgovt.com` (covers the demo too), Bing Webmaster, robots/agent access probe weekly. Live since 2026-10-17; before that the domain carried mail only. |
 | `oscivic.com` | family home page | links here; measured in its own repository |
 
 ## Rules for the maintenance pass
