@@ -1,0 +1,26 @@
+name: Release archive
+# When a version tag is pushed (Releases > Draft a new release creates it),
+# attach a source archive for servers without git. Release checklist step 6.
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  archive:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build the archive
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          git archive --format=tar.gz --prefix="open-county-portal-$v/" -o "open-county-portal-$v.tar.gz" "$GITHUB_REF_NAME"
+          sha256sum "open-county-portal-$v.tar.gz" > "open-county-portal-$v.tar.gz.sha256"
+      - name: Attach it to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          for _ in $(seq 1 12); do gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && break; sleep 10; done
+          gh release upload "$GITHUB_REF_NAME" "open-county-portal-$v.tar.gz" "open-county-portal-$v.tar.gz.sha256" --clobber
