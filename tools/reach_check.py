@@ -10,6 +10,7 @@ credentials are absent:
   Bing Webmaster Tools    the same, in Bing's weekly buckets                BING_WEBMASTER_API_KEY
 
 Usage:  python tools/reach_check.py OSGovt/open-county-portal reach/sites.json
+        python tools/reach_check.py OSGovt/open-county-portal --only-github   (GitHub section only)
 Nothing here is sent anywhere except to the APIs named above, read-only.
 """
 import csv
@@ -59,8 +60,10 @@ def github_traffic(repo: str) -> str:
     try:
         views, clones = gh(f"repos/{repo}/traffic/views"), gh(f"repos/{repo}/traffic/clones")
         refs, paths, meta = gh(f"repos/{repo}/traffic/popular/referrers"), gh(f"repos/{repo}/traffic/popular/paths"), gh(f"repos/{repo}")
-    except subprocess.CalledProcessError as exc:
-        notes.append(f"GitHub traffic: skipped ({exc})"); return "GitHub traffic: not available"
+    except subprocess.CalledProcessError:
+        notes.append("GitHub traffic: skipped. The traffic API needs a token with push access, which the Actions "
+                     "token lacks; the nightly maintenance task records it (docs/traffic/traffic.csv, reach/github.csv).")
+        return "GitHub traffic: see docs/traffic/traffic.csv (not readable with the Actions token)"
     row = {"date": TODAY, "views_14d": views["count"], "unique_visitors_14d": views["uniques"],
            "clones_14d": clones["count"], "unique_cloners_14d": clones["uniques"],
            "stars": meta["stargazers_count"], "forks": meta["forks_count"], "watchers": meta["subscribers_count"],
@@ -167,7 +170,11 @@ def bing(sites: list[dict]) -> str:
     return "Bing Webmaster:\n  " + "\n  ".join(lines)
 
 
-def main(repo: str, sites_file: str) -> int:
+def main(repo: str, sites_file: str, only: str | None = None) -> int:
+    """only="github" runs just the GitHub section (for a session whose token has push access)
+    and leaves latest.md alone; otherwise everything runs and latest.md is rewritten."""
+    if only == "github":
+        print(github_traffic(repo)); return 0
     sites = json.loads(Path(sites_file).read_text())["sites"]
     sections = [github_traffic(repo), agent_probe(sites), search_console(sites), bing(sites)]
     summary = [f"# Reach measurements, {TODAY}", "", *[s + "\n" for s in sections]]
@@ -179,4 +186,7 @@ def main(repo: str, sites_file: str) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else "reach/sites.json"))
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    flags = [a for a in sys.argv[1:] if a.startswith("--")]
+    sys.exit(main(args[0], args[1] if len(args) > 1 else "reach/sites.json",
+                  only="github" if "--only-github" in flags else None))

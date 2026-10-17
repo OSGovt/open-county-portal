@@ -63,7 +63,7 @@ never posts to another site on its own.
 |---|---|---|
 | `github.com/OSGovt/open-county-portal` | the project | GitHub traffic API (nightly `docs/traffic/traffic.csv`; weekly referrers and paths in `reach/github.csv`) |
 | `utopia.osgovt.com` | the live demo | Search Console and Bing Webmaster once verified; robots/agent access probe weekly |
-| `osgovt.com` | project domain | as above once there is a site to verify. As of 2026-10-16 the root answers an AI fetcher with a robots disallow; what, if anything, is served there has not been checked from this repository. |
+| `osgovt.com` | project domain | nothing yet. As of 2026-10-17 `osgovt.com` has no A record and `www.osgovt.com` does not exist (dns.google); the domain carries mail only. Until a site exists there, search traffic for the project's own name has nowhere to land but GitHub. |
 | `oscivic.com` | family home page | links here; measured in its own repository |
 
 ## Rules for the maintenance pass
