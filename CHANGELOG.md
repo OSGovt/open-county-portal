@@ -7,6 +7,11 @@ points here after every update.
 Versions follow [Semantic Versioning](https://semver.org): 1.x updates never
 require manual steps; a 2.0 would say exactly what to do, in order.
 
+## Unreleased
+
+- Public site: `/llms.txt`, a plain-text map of the site for AI assistants, listing only public pages; `/source` added to the sitemap.
+- Project: `REACH.md` and the `reach/` folder record where the project can be found and what the weekly maintenance pass changes (nothing for a running portal to do).
+
 ## 1.0.0
 
 First release.

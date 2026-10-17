@@ -9,7 +9,8 @@ PAGES = ["/", "/services", "/services/property-records", "/services/vehicle-regi
          "/offices/county-clerk", "/records", "/records?name=resident", "/records/2026-004812", "/pay",
          "/pay/property_tax", "/pay/property_tax?q=R000123", "/meetings", "/notices", "/public-information",
          "/public-information/archive", "/apply/vital-record", "/apply/jury-response", "/records/redaction-request",
-         "/accessibility", "/data", "/cart", "/search?q=deed", "/sitemap.xml", "/robots.txt", "/theme.css", "/healthz"]
+         "/accessibility", "/data", "/cart", "/search?q=deed", "/sitemap.xml", "/robots.txt", "/llms.txt", "/theme.css",
+         "/healthz"]
 
 
 @pytest.mark.parametrize("path", PAGES)
@@ -99,6 +100,24 @@ def test_security_headers(client):
     r = client.get("/")
     assert "frame-ancestors 'none'" in r.headers["content-security-policy"]
     assert r.headers["x-content-type-options"] == "nosniff"
+
+
+def test_llms_txt_maps_the_site(client):
+    """/llms.txt: a plain-text map for AI assistants, pointing only at public pages."""
+    r = client.get("/llms.txt")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/plain")
+    body = r.text
+    assert body.startswith("# Test County") and "/records" in body and "/pay" in body
+    assert "/api/v1/openapi.json" in body and "/data.json" in body and "/source" in body
+    assert "/services/property-records" in body   # published services are listed
+    assert "/staff" not in body                    # nothing an assistant has no business visiting
+
+
+def test_sitemap_lists_the_public_pages(client):
+    body = client.get("/sitemap.xml").text
+    for path in ("/", "/records", "/pay", "/data", "/source", "/services/property-records"):
+        assert f"<loc>http://testserver{path}</loc>" in body or f"{path}</loc>" in body, path
+    assert "/staff" not in body
 
 
 def test_source_code_offered(client):

@@ -1,0 +1,7 @@
+{
+  "_comment": "Web properties measured by tools/reach_check.py. gsc_property / bing_property override the verified property string when it differs from url + '/'. Add a site here once it is verified in Search Console and Bing Webmaster.",
+  "sites": [
+    { "name": "Utopia County demo", "url": "https://utopia.osgovt.com" },
+    { "name": "osgovt.com", "url": "https://osgovt.com" }
+  ]
+}

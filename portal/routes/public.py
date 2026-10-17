@@ -8,7 +8,17 @@ from fastapi.responses import FileResponse, RedirectResponse, Response
 from sqlalchemy import and_, or_, select
 
 from .. import __version__, config_store
-from ..db import files, get_engine, instruments, meetings, offices, pages, parties, services, utcnow
+from ..db import (
+    files,
+    get_engine,
+    instruments,
+    meetings,
+    offices,
+    pages,
+    parties,
+    services,
+    utcnow,
+)
 from ..settings import get_settings
 from ..web import render
 
@@ -181,11 +191,55 @@ def source_download():
     return FileResponse(cache, media_type="application/gzip", filename=cache.name)
 
 
+@router.get("/llms.txt", include_in_schema=False)
+def llms_txt() -> Response:
+    """A plain-text guide to this site for AI assistants (the llms.txt convention).
+
+    Assistants that answer "how do I pay my county taxes online" or "where are the
+    commissioners' minutes" read this before guessing. Everything in it is already
+    public on the pages it points to; it adds nothing new, only a map.
+    """
+    base = get_settings().site_url
+    with get_engine().connect() as conn:
+        site = config_store.get(conn, "site")
+        svc = conn.execute(select(services.c.title, services.c.slug).where(services.c.published.is_(True))
+                           .order_by(services.c.sort, services.c.title).limit(25)).all()
+    name = site.get("jurisdiction_name") or "This jurisdiction"
+    kind = (site.get("jurisdiction_type") or "county").replace("_", " ")
+    state = site.get("state_name") or ""
+    lines = [f"# {name}", "",
+             f"> Official website of {name}, a {kind} in {state}.".replace(" in .", ".") +
+             " Services, offices and hours, public meetings and notices, property records search with free copies, "
+             "online payments, online forms, and public information requests. Built to meet WCAG 2.1 AA and to work "
+             "without JavaScript. All public data is free through an open API and daily bulk files.", "",
+             "## Do something", "",
+             (f"- [Search property records]({base}/records): grantor, grantee, instrument number, legal description; "
+              "free uncertified copies, certified copies with an online verification code"),
+             f"- [Pay online]({base}/pay): property tax, court costs, utility bills and fees, in full or in part",
+             f"- [Services]({base}/services): what the {kind} does and how to get it done",
+             f"- [Offices]({base}/offices): departments, hours, addresses, phones",
+             f"- [Meetings]({base}/meetings): agendas and minutes; [Notices]({base}/notices): required postings",
+             f"- [Public information request]({base}/public-information)",
+             f"- [Accessibility]({base}/accessibility): standard, how to report a barrier, how to request an accessible version",
+             ""]
+    if svc:
+        lines += ["## Services", ""] + [f"- [{t}]({base}/services/{s})" for t, s in svc] + [""]
+    lines += ["## Open data and API", "",
+              f"- [Open data page]({base}/data): how to use the data, rate limits, bulk files",
+              f"- [OpenAPI 3 description]({base}/api/v1/openapi.json): REST API at {base}/api/v1, no key required",
+              f"- [DCAT-US 3.0 catalog]({base}/data.json): what Data.gov harvests",
+              f"- [Sitemap]({base}/sitemap.xml)", "",
+              "## Software", "",
+              (f"- [Source code]({base}/source): this site runs Open County Portal v{__version__}, free software "
+               "(AGPL-3.0). Project: https://github.com/OSGovt/open-county-portal"), ""]
+    return Response("\n".join(lines), media_type="text/plain; charset=utf-8")
+
+
 @router.get("/sitemap.xml", include_in_schema=False)
 def sitemap() -> Response:
     base = get_settings().site_url
     urls = ["/", "/services", "/offices", "/records", "/pay", "/meetings", "/notices", "/public-information",
-            "/data", "/accessibility"]
+            "/data", "/accessibility", "/source"]
     with get_engine().connect() as conn:
         urls += [f"/services/{s}" for s in conn.execute(select(services.c.slug).where(services.c.published.is_(True))).scalars()]
         urls += [f"/offices/{s}" for s in conn.execute(select(offices.c.slug).where(offices.c.active.is_(True))).scalars()]

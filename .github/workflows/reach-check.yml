@@ -1,0 +1,50 @@
+# Weekly reach measurements: GitHub traffic, whether search engines and AI
+# assistants may read the sites, and (once the secrets exist) Search Console
+# and Bing Webmaster query data. Writes reach/*.csv and reach/latest.md and
+# commits them. The objective these numbers serve is REACH.md.
+name: Reach check
+
+on:
+  schedule:
+    - cron: "37 6 * * 0"   # Sundays 06:37 UTC = 1:37 AM Central (12:37 AM in winter)
+  workflow_dispatch:
+
+concurrency:
+  group: reach-check
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  measure:
+    if: github.repository_owner == 'OSGovt'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install the measurement tool's packages
+        run: pip install httpx==0.28.1 google-auth==2.40.3
+
+      - name: Measure
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          BING_WEBMASTER_API_KEY: ${{ secrets.BING_WEBMASTER_API_KEY }}
+        run: python tools/reach_check.py "$GITHUB_REPOSITORY" reach/sites.json
+
+      - name: Commit the measurements
+        run: |
+          git config user.name "OSGovt"
+          git config user.email "hello@osgovt.com"
+          git add reach/
+          if git diff --cached --quiet; then
+            echo "Nothing changed."; exit 0
+          fi
+          git commit -m "Reach: weekly measurements $(date -u +%Y-%m-%d) [skip ci]"
+          git push
