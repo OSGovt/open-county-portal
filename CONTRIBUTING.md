@@ -45,6 +45,15 @@ copyright. Add `Signed-off-by: Your Name <email>` to commits (`git commit -s`)
 to certify you have the right to contribute it, per the Developer Certificate
 of Origin (https://developercertificate.org).
 
+## Names
+
+Every OSCivic project name is "OS" plus a CamelCase noun: OSGovt, OSCivic,
+OSFairground, OSRoster, OSNeighbors. Write domains and repositories that way
+wherever people read them: OSGovt.com, OSCivic.com, OSFairground.com,
+OSGovt/OSGovt.com. Web addresses (https://osgovt.com, utopia.osgovt.com) and
+email addresses stay lowercase. If something seems to call for a different
+format, ask in an issue before using it.
+
 ## Conduct
 
 Everyone taking part follows the [code of conduct](CODE_OF_CONDUCT.md).
