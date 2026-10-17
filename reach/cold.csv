@@ -1,0 +1,6 @@
+date,persona,model,searches,found_in_results,found_in_answer,our_urls,recommended_domains,answer_chars
+2026-10-17,county-clerk,claude-sonnet-5-5,8,no,no,,blog.usablenet.com titleii.org ones.com github.com/mayan-edms github.com/sismics walker.tx.publicsearch.us esd5.medina.tx.us tylertech.com,3962
+2026-10-17,county-it,claude-sonnet-5-5,8,no,no,,consumerfinancialserviceslawmonitor.com accessibility.build blog.usablenet.com guideflow.com edmundsgovtech.com centralsquare.com justiceware.com wicourts.gov,6289
+2026-10-17,special-district,claude-sonnet-5-5,6,no,no,,blog.usablenet.com accessible.org accessibe.com utilitydive.com get.gov munibit.com townweb.com wppersona.com,6081
+2026-10-17,implementer,claude-sonnet-5-5,8,no,no,,en.wikipedia.org drupal.org dkan.readthedocs.io chicago.councilmatic.org councilmatic.org 4minitz.com civicplus.com granicus.com,5159
+2026-10-17,open-data-dev,claude-sonnet-5-5,5,no,no,,resources.data.gov govdataguide.org docs.ckan.org github.com/gsa github.com/fabio-rovai getdkan.org doc.arcgis.com esri.com,4239
