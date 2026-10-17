@@ -29,7 +29,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install the measurement tool's packages
-        run: pip install httpx==0.28.1 google-auth==2.40.3
+        run: pip install httpx==0.28.1 google-auth==2.40.3 requests==2.32.5
 
       - name: Measure
         env:
