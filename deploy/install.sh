@@ -282,7 +282,10 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-section "Taking the first backup"
+section "Writing the first open-data files and taking the first backup"
+# The nightly job refreshes these; writing them now means the catalog's
+# download links work from the first minute instead of after the first night.
+docker compose exec -T app python -m portal.cli export-bulk || say "  (bulk files will be written by tonight's maintenance run)"
 /usr/local/bin/countyctl backup
 
 say ""
