@@ -46,6 +46,21 @@ jobs:
           python -m playwright install --with-deps chromium
           (cd conformance && npm ci)
           python conformance/run.py --url "https://$HOST" --insecure --no-forms --out conformance/reports
+      - name: Report failures as annotations
+        if: always()
+        run: |
+          python - <<'PY'
+          import glob, json
+          files = sorted(glob.glob("conformance/reports/conformance-*.json"))
+          if not files:
+              print("::warning::no conformance report was written"); raise SystemExit
+          d = json.load(open(files[-1]))
+          print("::notice::conformance counts: " + json.dumps(d["counts"]))
+          fails = [r for r in d["results"] if r["status"] == "FAIL"]
+          for r in fails[:40]:
+              msg = f"[{r['group']}] {r['check']} @ {r['where']}: {r['detail']}".replace("\n", " ")[:900]
+              print("::error::" + msg)
+          PY
       - uses: actions/upload-artifact@v6
         if: always()
         with:
