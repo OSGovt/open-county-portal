@@ -1,0 +1,111 @@
+name: Newcomer rehearsal
+# A small model (Haiku), told to follow only the documentation, tries to get
+# the project running on a clean machine. Where it gets stuck, a county IT
+# contractor would too. Its findings become issues; the journal becomes a
+# field note. Billed to the Console API key in ANTHROPIC_API_KEY, not a plan.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Tag or branch to rehearse
+        default: v1.0.0
+      runs:
+        description: How many independent testers (1-3)
+        default: "1"
+  schedule:
+    - cron: "17 8 * * 1"   # Mondays 08:17 UTC, after the Monday install check
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+concurrency: { group: newcomer-rehearsal, cancel-in-progress: false }
+jobs:
+  rehearse:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        tester: [1, 2, 3]
+    env:
+      REHEARSAL_REF: ${{ inputs.ref || 'v1.0.0' }}
+    steps:
+      - name: Only run as many testers as asked
+        id: gate
+        env:
+          WANT: ${{ inputs.runs || '1' }}
+          ME: ${{ matrix.tester }}
+        run: |
+          want="${WANT:-1}"; me="${ME}"
+          if [ "$me" -le "$want" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "go=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v5
+        if: steps.gate.outputs.go == 'true'
+        with:
+          ref: ${{ env.REHEARSAL_REF }}
+          fetch-depth: 1
+      - name: Read the brief from the default branch, not the tag
+        if: steps.gate.outputs.go == 'true'
+        id: brief
+        run: |
+          curl -fsSL "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/.github/rehearsal/newcomer-brief.md" -o /tmp/newcomer-brief.md
+          { echo "text<<BRIEF_EOF"; cat /tmp/newcomer-brief.md; echo; echo "BRIEF_EOF"; } >> "$GITHUB_OUTPUT"
+          mkdir -p rehearsal/shots
+      - uses: actions/setup-python@v6
+        if: steps.gate.outputs.go == 'true'
+        with: { python-version: "3.12" }
+      - name: Playwright for screenshots
+        if: steps.gate.outputs.go == 'true'
+        run: pip install -q playwright && python -m playwright install --with-deps chromium
+      - name: The tester
+        if: steps.gate.outputs.go == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: ${{ steps.brief.outputs.text }}
+          claude_args: |
+            --model claude-haiku-5-5
+            --max-turns 60
+            --allowedTools "Bash,Read,Write,Glob"
+      - name: Stop anything left running
+        if: always() && steps.gate.outputs.go == 'true'
+        run: |
+          docker compose -f deploy/local/docker-compose.yml down -v 2>/dev/null || true
+          pkill -f uvicorn 2>/dev/null || true
+      - uses: actions/upload-artifact@v6
+        if: always() && steps.gate.outputs.go == 'true'
+        with:
+          name: rehearsal-tester-${{ matrix.tester }}
+          path: rehearsal
+          if-no-files-found: warn
+      - name: Open one issue per finding
+        if: steps.gate.outputs.go == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TESTER: ${{ matrix.tester }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -f rehearsal/findings.json ] || { echo "::warning::tester $TESTER wrote no findings.json"; exit 0; }
+          python3 - <<'PY'
+          import json, os, subprocess
+          repo = os.environ["GITHUB_REPOSITORY"]; run = os.environ["RUN_URL"]; tester = os.environ["TESTER"]
+          ref = os.environ.get("REHEARSAL_REF", "")
+          try:
+              findings = json.load(open("rehearsal/findings.json"))
+          except Exception as e:
+              print(f"::warning::findings.json unreadable: {e}"); raise SystemExit
+          existing = subprocess.run(["gh", "api", f"repos/{repo}/issues?state=open&labels=readme-rehearsal&per_page=100", "--jq", ".[].title"],
+                                    capture_output=True, text=True).stdout.splitlines()
+          for f in findings[:12]:
+              sev = f.get("severity", "confusing")
+              title = f"Rehearsal ({ref}): {f.get('what_happened','')[:90].rstrip()}"
+              if any(title[:60] == t[:60] for t in existing):
+                  print("skip duplicate:", title); continue
+              body = (f"Found by an automated newcomer rehearsal (Haiku, tester {tester}) following only the documentation at `{ref}`.\n\n"
+                      f"**Where.** {f.get('file','')}\n\n**What happened.** {f.get('what_happened','')}\n\n"
+                      f"**Expected fix.** {f.get('expected_fix','')}\n\nJournal and screenshots: {run}")
+              labels = ["readme-rehearsal", "docs"] + (["blocker"] if sev == "blocker" else [])
+              args = ["gh", "api", f"repos/{repo}/issues", "-f", f"title={title}", "-f", f"body={body}"]
+              for l in labels: args += ["-f", f"labels[]={l}"]
+              subprocess.run(args, check=False)
+              existing.append(title)
+          PY
