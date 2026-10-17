@@ -1,0 +1,59 @@
+name: Install check
+# Release checklist step 2: install the current code on a clean Ubuntu 24.04
+# machine with deploy/install.sh, unattended, then run countyctl doctor and
+# the conformance suite against it. Runs on demand, on every version tag, and
+# weekly, so the installer a county copies from the README is known to work.
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+  schedule:
+    - cron: "41 7 * * 1"   # Mondays 07:41 UTC
+permissions:
+  contents: read
+jobs:
+  install:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      HOST: portal.test
+    steps:
+      - uses: actions/checkout@v5
+      - name: Point the test hostname at this machine
+        run: echo "127.0.0.1 $HOST" | sudo tee -a /etc/hosts
+      - name: Install unattended, the way the README says
+        run: |
+          sudo PORTAL_NAME="Install Check County" PORTAL_TYPE=county PORTAL_STATE=tx \
+               PORTAL_HOST="$HOST" PORTAL_TLS_MODE=internal \
+               PORTAL_ADMIN_EMAIL=it@example.com PORTAL_ADMIN_NAME="Install Check" \
+               ./deploy/install.sh --yes
+      - name: countyctl doctor
+        run: sudo countyctl doctor
+      - name: The home page answers over HTTPS
+        run: |
+          for _ in $(seq 1 30); do
+            curl -fsk --max-time 10 "https://$HOST/" | grep -q "Install Check County" && exit 0
+            sleep 5
+          done
+          echo "::error::https://$HOST/ did not serve the home page"; sudo countyctl status || true; exit 1
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v5
+        with: { node-version: 22 }
+      - name: Conformance suite against the installed portal
+        run: |
+          pip install -r conformance/requirements.txt
+          python -m playwright install --with-deps chromium
+          (cd conformance && npm ci)
+          python conformance/run.py --url "https://$HOST" --insecure --no-forms --out conformance/reports
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: install-check-reports
+          path: conformance/reports
+          if-no-files-found: ignore
+      - name: Show what happened if it failed
+        if: failure()
+        run: |
+          sudo countyctl status || true
+          sudo docker compose -f /opt/county-portal/docker-compose.yml logs --tail=100 || true
