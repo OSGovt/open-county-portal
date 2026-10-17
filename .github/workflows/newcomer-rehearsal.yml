@@ -77,7 +77,7 @@ jobs:
           name: rehearsal-tester-${{ matrix.tester }}
           path: rehearsal
           if-no-files-found: warn
-      - name: Open one issue per finding
+      - name: Open one issue for the run, with a checklist of findings
         if: steps.gate.outputs.go == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -86,26 +86,36 @@ jobs:
         run: |
           [ -f rehearsal/findings.json ] || { echo "::warning::tester $TESTER wrote no findings.json"; exit 0; }
           python3 - <<'PY'
-          import json, os, subprocess
+          import json, os, subprocess, datetime
           repo = os.environ["GITHUB_REPOSITORY"]; run = os.environ["RUN_URL"]; tester = os.environ["TESTER"]
           ref = os.environ.get("REHEARSAL_REF", "")
           try:
               findings = json.load(open("rehearsal/findings.json"))
           except Exception as e:
               print(f"::warning::findings.json unreadable: {e}"); raise SystemExit
-          existing = subprocess.run(["gh", "api", f"repos/{repo}/issues?state=open&labels=readme-rehearsal&per_page=100", "--jq", ".[].title"],
-                                    capture_output=True, text=True).stdout.splitlines()
-          for f in findings[:12]:
+          if not findings:
+              print("::notice::no findings; no issue opened"); raise SystemExit
+          verdict = ""
+          try:
+              j = open("rehearsal/journal.md").read()
+              i = j.lower().rfind("verdict")
+              verdict = j[i:i+200].splitlines()[0] if i >= 0 else ""
+          except Exception:
+              pass
+          order = {"blocker": 0, "confusing": 1, "cosmetic": 2}
+          findings.sort(key=lambda f: order.get(f.get("severity", "confusing"), 1))
+          blockers = sum(1 for f in findings if f.get("severity") == "blocker")
+          today = datetime.date.today().isoformat()
+          title = f"Newcomer rehearsal {today} ({ref}, tester {tester}): {len(findings)} findings, {blockers} blockers"
+          lines = [f"Newcomer rehearsal (Haiku, tester {tester}) following only the documentation at `{ref}`. "
+                   f"One checklist item per finding; the nightly repair run ticks items as it fixes or answers them, and closes this issue when all are done.",
+                   "", f"**{verdict}**" if verdict else "", f"Journal and screenshots: {run}", ""]
+          for f in findings[:25]:
               sev = f.get("severity", "confusing")
-              title = f"Rehearsal ({ref}): {f.get('what_happened','')[:90].rstrip()}"
-              if any(title[:60] == t[:60] for t in existing):
-                  print("skip duplicate:", title); continue
-              body = (f"Found by an automated newcomer rehearsal (Haiku, tester {tester}) following only the documentation at `{ref}`.\n\n"
-                      f"**Where.** {f.get('file','')}\n\n**What happened.** {f.get('what_happened','')}\n\n"
-                      f"**Expected fix.** {f.get('expected_fix','')}\n\nJournal and screenshots: {run}")
-              labels = ["readme-rehearsal", "docs"] + (["blocker"] if sev == "blocker" else [])
-              args = ["gh", "api", f"repos/{repo}/issues", "-f", f"title={title}", "-f", f"body={body}"]
-              for l in labels: args += ["-f", f"labels[]={l}"]
-              subprocess.run(args, check=False)
-              existing.append(title)
+              lines.append(f"- [ ] **{sev}** — {f.get('file','')}: {f.get('what_happened','')} _Expected:_ {f.get('expected_fix','')}")
+          body = "\n".join(lines)
+          args = ["gh", "api", f"repos/{repo}/issues", "-f", f"title={title}", "-f", f"body={body}",
+                  "-f", "labels[]=readme-rehearsal", "-f", "labels[]=docs"]
+          if blockers: args += ["-f", "labels[]=blocker"]
+          subprocess.run(args, check=False)
           PY

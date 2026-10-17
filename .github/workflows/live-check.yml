@@ -121,5 +121,8 @@ jobs:
       - name: Fail the run if a check failed
         if: steps.journey.outcome != 'success' || steps.conformance.outcome != 'success'
         run: |
+          # Annotations are readable through the check-runs API; Actions logs are not.
+          [ -f journey.md ] && grep -E '\*\*FAIL\*\*' journey.md | sed 's/|/ /g; s/  */ /g' | head -20 | while IFS= read -r line; do echo "::error::walk-through: $line"; done
+          [ -f conformance.txt ] && sed 's/\x1b\[[0-9;]*m//g' conformance.txt | grep -E '^ *FAIL' | head -20 | while IFS= read -r line; do echo "::error::conformance: $line"; done
           echo "::error::Walk-through: ${{ steps.journey.outcome }}; conformance suite: ${{ steps.conformance.outcome }}. See the live-check issue."
           exit 1
