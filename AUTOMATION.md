@@ -19,9 +19,9 @@ repair, then back up the repair.
 
 | # | Actor | Runs | What it does | Writes | Opens or closes |
 |---|---|---|---|---|---|
-| 1 | **CI** (`ci.yml`) | every push | unit tests, conformance suite, shellcheck, state-pack validation, image build | nothing | — |
-| 2 | **Deploy demo** (`deploy-demo.yml`) | after green CI on `main` | deploys `utopia.osgovt.com` | the Worker | — |
-| 3 | **Live demo check** (`live-check.yml`) | after each deploy, and 1:11 a.m. nightly | browser walk-through and conformance suite against the live demo | nothing in the repo | `live-check` issues (opens on failure, closes when passing) |
+| 1 | **CI** (`ci.yml`) | every push, except one that changes only `docs/traffic/traffic.csv` or `reach/`; a newer push to the branch cancels a run in progress | unit tests, conformance suite, shellcheck, state-pack validation, image build | nothing | — |
+| 2 | **Deploy demo** (`deploy-demo.yml`) | after green CI on `main`, when the commit changes something the image is built from (`deploy/cloudflare/deploy_needed.py` decides); always when started by hand | deploys `utopia.osgovt.com` | the Worker | — |
+| 3 | **Live demo check** (`live-check.yml`) | after each deploy that deployed, and 1:11 a.m. nightly | browser walk-through and conformance suite against the live demo | nothing in the repo | `live-check` issues (opens on failure, closes when passing) |
 | 4 | **Reach check** (`reach-check.yml`) | Sundays 1:37 a.m. | measures findability: crawler access, GitHub traffic, search consoles when connected | `reach/*.csv`, `reach/latest.md` (`[skip ci]`) | — |
 | 5 | **Nightly repair** (scheduled Claude run, Fable) | 2:13 a.m. nightly | records the day's traffic row; fixes whatever an open `live-check` issue describes, adding a test; resolves `readme-rehearsal` issues (fix, close with reason, or relabel `enhancement`) | `docs/traffic/traffic.csv`; fixes anywhere except the reach-owned paths below | comments on the issues it works; CI closes them via commit messages |
 | 6 | **Install check** (`install-check.yml`) | Mondays 2:41 a.m., every `v*` tag, on demand | unattended install on a clean Ubuntu machine, then `countyctl doctor` and the conformance suite | nothing (annotations only) | — |
@@ -69,7 +69,10 @@ Two writers on one file is the only real collision. These are the rules.
    run:", "Newcomer rehearsal (Haiku, tester 2):"). Commit messages carry a
    `Co-Authored-By: Claude` trailer.
 5. One routine commit per run at most (`Traffic log:`, `Reach:`), marked
-   `[skip ci]` when it changes only data.
+   `[skip ci]` when it changes only data. CI also ignores those two data paths
+   itself, so the mark is a courtesy, not the safeguard.
+   Group related edits into one push: every push to `main` that reaches the
+   image costs a CI run, a deploy and a twenty-minute live check.
 6. Every claim written into a page traces to a file in this repository. No
    compliance promises, no dates or counts that were not measured, no customer
    or adoption claims.

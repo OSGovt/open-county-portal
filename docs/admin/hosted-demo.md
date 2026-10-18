@@ -251,8 +251,8 @@ it by hand from **Actions** > **Live demo check** > **Run workflow**.
 ## Running it afterward
 
 - **Change something and redeploy:** push to `main` (GitHub deploys after CI
-  passes), or run the deploy command again. Visitors see the new version from
-  their next visit.
+  passes, if the commit changed something the image is built from), or run the
+  deploy command again. Visitors see the new version from their next visit.
 - **Watch it:** Cloudflare dashboard > **Workers & Pages** > `utopia-county`
   shows requests and logs; **Containers** shows when it's awake.
 - **Take it down:** `npx wrangler delete` in `deploy/cloudflare` removes the

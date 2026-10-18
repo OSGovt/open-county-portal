@@ -1,8 +1,22 @@
 name: CI
 
+# Runs on every push except the two routine data commits (the nightly traffic
+# row and the weekly reach measurements), which change nothing CI tests. A
+# newer push to the same branch cancels a run still in progress, so a burst of
+# commits is tested once, at its newest commit. Tag pushes always run.
 on:
   push:
+    paths-ignore:
+      - docs/traffic/traffic.csv
+      - reach/**
   pull_request:
+    paths-ignore:
+      - docs/traffic/traffic.csv
+      - reach/**
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:

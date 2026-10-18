@@ -2,6 +2,11 @@
 # (https://utopia.osgovt.com) after CI passes on main, or when started by hand
 # from the Actions tab. Needs two repository secrets: CLOUDFLARE_API_TOKEN and
 # CLOUDFLARE_ACCOUNT_ID. See docs/admin/hosted-demo.md.
+#
+# A commit that changes nothing the image is built from (workflows, tools,
+# reach data, the traffic log, project documents outside the image) is not
+# deployed: the plan job compares it with the last deployed commit using
+# deploy/cloudflare/deploy_needed.py. A run started by hand always deploys.
 name: Deploy demo
 
 on:
@@ -17,13 +22,36 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
-  deploy:
+  plan:
     # Only the project's own repository deploys; forks skip this.
     if: >-
       github.repository_owner == 'OSGovt' &&
       (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      deploy: ${{ steps.decide.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Does this commit change the image?
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 deploy/cloudflare/deploy_needed.py
+          --repo "$GITHUB_REPOSITORY"
+          --head "${{ github.event.workflow_run.head_sha || github.sha }}"
+          --event "${{ github.event_name }}"
+
+  deploy:
+    needs: plan
+    if: needs.plan.outputs.deploy == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:

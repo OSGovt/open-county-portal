@@ -3,6 +3,10 @@
 # sign-in) and the conformance suite (accessibility, API, data, catalog).
 # Any failure opens a GitHub issue labeled live-check; the next passing run
 # closes it. See docs/admin/hosted-demo.md.
+#
+# A Deploy demo run that found nothing to deploy (its deploy job was skipped)
+# does not start a check; the demo did not change. The nightly check and runs
+# started by hand always check.
 name: Live demo check
 
 on:
@@ -21,15 +25,47 @@ concurrency:
 permissions:
   contents: read
   issues: write
+  actions: read
 
 env:
   DEMO_URL: https://utopia.osgovt.com
 
 jobs:
-  check:
+  gate:
     if: >-
       github.repository_owner == 'OSGovt' &&
       (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      check: ${{ steps.decide.outputs.check }}
+    steps:
+      - name: Did that deploy run actually deploy?
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          if [ "$EVENT" != "workflow_run" ]; then
+            echo "check=true" >> "$GITHUB_OUTPUT"; echo "Started by $EVENT: checking."; exit 0
+          fi
+          # Count the deploy run's jobs named "deploy" that succeeded. A skipped
+          # deploy job means the commit changed nothing in the image. If the
+          # question cannot be answered, check anyway.
+          if deployed="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs?per_page=100" \
+                --jq '[.jobs[] | select(.name == "deploy" and .conclusion == "success")] | length')"; then
+            if [ "$deployed" = "0" ]; then
+              echo "check=false" >> "$GITHUB_OUTPUT"; echo "Deploy run $RUN_ID deployed nothing: skipping."; exit 0
+            fi
+          else
+            echo "::warning::Could not read the jobs of deploy run $RUN_ID; checking anyway."
+          fi
+          echo "check=true" >> "$GITHUB_OUTPUT"; echo "Deploy run $RUN_ID deployed: checking."
+
+  check:
+    needs: gate
+    if: needs.gate.outputs.check == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
