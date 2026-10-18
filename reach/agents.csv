@@ -21,3 +21,25 @@ date,site,agent,home_allowed,robots,sitemap,llms_txt,home
 2026-10-17,https://osgovt.com,OAI-SearchBot,unknown,error: ConnectError,error: ConnectError,error: ConnectError,error: ConnectError
 2026-10-17,https://osgovt.com,PerplexityBot,unknown,error: ConnectError,error: ConnectError,error: ConnectError,error: ConnectError
 2026-10-17,https://osgovt.com,Perplexity-User,unknown,error: ConnectError,error: ConnectError,error: ConnectError,error: ConnectError
+2026-10-18,https://utopia.osgovt.com,Googlebot,true,200,200,200,200
+2026-10-18,https://utopia.osgovt.com,Bingbot,true,200,200,200,200
+2026-10-18,https://utopia.osgovt.com,DuckDuckBot,true,200,200,200,200
+2026-10-18,https://utopia.osgovt.com,ClaudeBot,false,200,200,200,200
+2026-10-18,https://utopia.osgovt.com,Claude-User,true,200,200,200,200
+2026-10-18,https://utopia.osgovt.com,Claude-SearchBot,true,200,200,200,200
+2026-10-18,https://utopia.osgovt.com,GPTBot,false,200,200,200,200
+2026-10-18,https://utopia.osgovt.com,ChatGPT-User,true,200,200,200,200
+2026-10-18,https://utopia.osgovt.com,OAI-SearchBot,true,200,200,200,200
+2026-10-18,https://utopia.osgovt.com,PerplexityBot,true,200,200,200,200
+2026-10-18,https://utopia.osgovt.com,Perplexity-User,true,200,200,200,200
+2026-10-18,https://osgovt.com,Googlebot,true,200,200,200,200
+2026-10-18,https://osgovt.com,Bingbot,true,200,200,200,200
+2026-10-18,https://osgovt.com,DuckDuckBot,true,200,200,200,200
+2026-10-18,https://osgovt.com,ClaudeBot,false,200,200,200,200
+2026-10-18,https://osgovt.com,Claude-User,true,200,200,200,200
+2026-10-18,https://osgovt.com,Claude-SearchBot,true,200,200,200,200
+2026-10-18,https://osgovt.com,GPTBot,false,200,200,200,200
+2026-10-18,https://osgovt.com,ChatGPT-User,true,200,200,200,200
+2026-10-18,https://osgovt.com,OAI-SearchBot,true,200,200,200,200
+2026-10-18,https://osgovt.com,PerplexityBot,true,200,200,200,200
+2026-10-18,https://osgovt.com,Perplexity-User,true,200,200,200,200
