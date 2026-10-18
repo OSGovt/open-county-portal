@@ -4,3 +4,8 @@ date,persona,model,searches,found_in_results,found_in_answer,our_urls,recommende
 2026-10-17,special-district,claude-sonnet-5-5,6,no,no,,blog.usablenet.com accessible.org accessibe.com utilitydive.com get.gov munibit.com townweb.com wppersona.com,6081
 2026-10-17,implementer,claude-sonnet-5-5,8,no,no,,en.wikipedia.org drupal.org dkan.readthedocs.io chicago.councilmatic.org councilmatic.org 4minitz.com civicplus.com granicus.com,5159
 2026-10-17,open-data-dev,claude-sonnet-5-5,5,no,no,,resources.data.gov govdataguide.org docs.ckan.org github.com/gsa github.com/fabio-rovai getdkan.org doc.arcgis.com esri.com,4239
+2026-10-18,county-clerk,claude-sonnet-5-5,8,no,no,,blog.usablenet.com titleii.org accessibility.build countyprogress.com docs.mayan-edms.com mayan-edms.com github.com/mayan-edms jeffersoncountytx.gov,4936
+2026-10-18,county-it,claude-sonnet-5-5,8,no,no,,titleii.org localgovdrupal.org eolasmagazine.ie openaccessgovernment.org new.drupal.org bigbluedoor.net github.com/cityofnewyork docs.drupalcommerce.org,6697
+2026-10-18,special-district,claude-sonnet-5-5,5,no,no,,jacksonlewis.com blog.usablenet.com accessibility.build capterra.com citizenportal.ai solutionscompared.com townweb.com wppersona.com,5234
+2026-10-18,implementer,claude-sonnet-5-5,8,no,no,,en.wikipedia.org ckan.org publicsectornetwork.com drupal.org github.com/getdkan datopian.com alaveteli.org opensource.com,4682
+2026-10-18,open-data-dev,claude-sonnet-5-5,6,no,no,,esri.com dev.socrata.com guidance.data.gov.uk github.com/socrata github.com/fabio-rovai getdkan.org gov.tesseract.academy govdataguide.org,5585
