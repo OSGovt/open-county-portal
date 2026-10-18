@@ -1,13 +1,18 @@
 # Open County Portal
 
-A complete, accessible public website for counties, cities and special
-districts, with online payments, a counter point of sale, records search, and
-a free open API for all public data. Free and open-source, under the GNU AGPL.
+Free, open-source, self-hosted government website software for counties,
+cities and special districts: county clerk official records search (deeds,
+liens and plats, with free uncertified copies), online payments for property
+tax, court costs, utility bills and fees (Stripe Checkout or pay at the
+office), a counter point of sale, meetings and agendas, public notices, and a
+free open API with a DCAT-US `data.json` open data catalog that Data.gov
+harvests. Licensed under the GNU AGPL.
 
-**Accessibility and freedom:** every page meets WCAG 2.1 AA and works on any
-phone, with or without JavaScript. Every piece of public data is free to use
-through the API, daily bulk files, and a DCAT-US catalog that Data.gov
-harvests. No license fees, no lock-in, no vendor holding your data.
+**Accessibility and freedom:** every page meets WCAG 2.1 AA, the standard the
+ADA Title II rule sets for state and local government websites, and works on
+any phone, with or without JavaScript. Every piece of public data is free to
+use through the API, daily bulk files, and the DCAT-US catalog. No license
+fees, no lock-in, no vendor holding your data.
 
 ## A few terms
 
@@ -48,7 +53,7 @@ harvests. No license fees, no lock-in, no vendor holding your data.
 - A conformance suite that checks any running portal for accessibility, API
   contract and catalog problems
 
-## Run it locally in three commands
+## Run it locally with Docker in three commands
 
 You need Docker (Docker Engine on Linux, Docker Desktop on Mac or Windows with
 WSL) and access to hub.docker.com. Then:
